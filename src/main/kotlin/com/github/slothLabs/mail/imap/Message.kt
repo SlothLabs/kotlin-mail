@@ -11,6 +11,7 @@ data class MessageHeader(val name: String, val value: String)
 
 class Message(private val mailMessage: MailMessage) {
 
+    val from: String = mailMessage.from[0].toString()
     val bodyText: String = mailMessage.content as String
     val uid = mailMessage.getUID()
 
