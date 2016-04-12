@@ -21,6 +21,7 @@ class Imap internal constructor(private val store: Store): Closeable, AutoClosea
         fldr.open(mode.toJavaMailMode())
         val theFolder = Folder(fldr)
         theFolder.action()
+        theFolder.close(false)
     }
 
     private fun isConnected() = store.isConnected

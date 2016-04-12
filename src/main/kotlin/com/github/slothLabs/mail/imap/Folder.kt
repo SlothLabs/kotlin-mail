@@ -41,5 +41,9 @@ class Folder(private val javaMailFolder: IMAPFolder) {
         preFetchInfo = FetchProfile()
         test.forEach { preFetchInfo.add(it) }
     }
+
+    fun close(expunge: Boolean) {
+        javaMailFolder.close(expunge)
+    }
 }
 
