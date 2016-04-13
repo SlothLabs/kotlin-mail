@@ -2,6 +2,7 @@ package com.github.slothLabs.mail.imap
 
 import com.sun.mail.imap.IMAPFolder
 import com.sun.mail.imap.IMAPMessage
+import org.funktionale.option.Option
 import javax.mail.FetchProfile
 import javax.mail.Folder
 
@@ -19,16 +20,18 @@ class Folder(private val javaMailFolder: IMAPFolder) {
     private var preFetchInfo = FetchProfile()
 
     fun search(block: SearchBuilder.() -> Unit): List<Message> {
-        val bldr = SearchBuilder()
-        bldr.block()
-        val searchTerm = bldr.build()
+        val builder = SearchBuilder()
+        builder.block()
+        val searchTerm = builder.build()
 
-        val javaMailMessages = javaMailFolder.search(searchTerm)
+        val javaMailMessages = searchTerm.map { javaMailFolder.search(it) }
 
-        javaMailFolder.fetch(javaMailMessages, preFetchInfo)
+        javaMailMessages.map { javaMailFolder.fetch(it, preFetchInfo) }
         val messages = mutableListOf<Message>()
-        for (jmm in javaMailMessages) {
-            messages.add(Message(jmm as IMAPMessage))
+        javaMailMessages.map {
+            for (jmm in it) {
+                messages.add(Message(jmm as IMAPMessage))
+            }
         }
         return messages
     }

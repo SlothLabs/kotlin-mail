@@ -3,6 +3,8 @@ package com.github.slothLabs.mail.imap
 import com.sun.mail.imap.ModifiedSinceTerm
 import com.sun.mail.imap.OlderTerm
 import com.sun.mail.imap.YoungerTerm
+import org.funktionale.option.Option
+import org.funktionale.option.Option.*
 import java.util.Date
 import javax.mail.Flags
 import javax.mail.internet.InternetAddress
@@ -31,7 +33,10 @@ class SearchBuilder {
 
     private val terms = mutableListOf<SearchTerm>()
 
-    fun build(): SearchTerm = terms.reduce { first, second -> AndTerm(first, second) }
+    fun build(): Option<SearchTerm> =
+        if (terms.isEmpty()) None
+        else if (terms.size == 1) Some(terms[0])
+        else Some(terms.reduce { first, second -> AndTerm(first, second) })
 
     fun from(address: InternetAddress) = FromTerm(address)
 
@@ -45,9 +50,9 @@ class SearchBuilder {
 
     fun recipient(recipientType: Message.RecipientType, str: String) = RecipientStringTerm(recipientType, str)
 
-    fun withRecipient(recipientType: RecipientType, address: InternetAddress) = with(recipient(recipientType, address))
+    fun withRecipient(recipientType: Message.RecipientType, address: InternetAddress) = with(recipient(recipientType, address))
 
-    fun withRecipient(recipientType: RecipientType, address: String) = with(recipient(recipientType, address))
+    fun withRecipient(recipientType: Message.RecipientType, address: String) = with(recipient(recipientType, address))
 
     fun to(address: InternetAddress) = recipient(RecipientType.TO, address)
 
@@ -121,7 +126,11 @@ class SearchBuilder {
 
     fun withNotReceivedOn(date: Date) = with(notReceivedOn(date))
 
+    fun receivedBetween(dateRange: ClosedRange<Date>) = receivedBetween(dateRange.start, dateRange.endInclusive)
+
     fun receivedBetween(earliest: Date, latest: Date) = receivedOnOrAfter(earliest) and receivedOnOrBefore(latest)
+
+    fun withReceivedBetween(dateRange: ClosedRange<Date>) = with(receivedBetween(dateRange))
 
     fun withReceivedBetween(earliest: Date, latest: Date) = with(receivedBetween(earliest, latest))
 
@@ -153,7 +162,11 @@ class SearchBuilder {
 
     fun withNotSentOn(date: Date) = with(notSentOn(date))
 
+    fun sentBetween(dateRange: ClosedRange<Date>) = sentBetween(dateRange.start, dateRange.endInclusive)
+
     fun sentBetween(earliest: Date, latest: Date) = sentOnOrAfter(earliest) and sentOnOrBefore(latest)
+
+    fun withSentBetween(dateRange: ClosedRange<Date>) = with(sentBetween(dateRange))
 
     fun withSentBetween(earliest: Date, latest: Date) = with(sentBetween(earliest, latest))
 
@@ -193,7 +206,11 @@ class SearchBuilder {
 
     fun withSizeIsNot(size: Int) = with(sizeIsNot(size))
 
+    fun sizeBetween(sizeRange: IntRange) = sizeBetween(sizeRange.start, sizeRange.endInclusive)
+
     fun sizeBetween(smallest: Int, largest: Int) = sizeIsAtLeast(smallest) and sizeIsNoMoreThan(largest)
+
+    fun withSizeBetween(sizeRange: IntRange) = with(sizeBetween(sizeRange))
 
     fun withSizeBetween(smallest: Int, largest: Int) = with(sizeBetween(smallest, largest))
 
