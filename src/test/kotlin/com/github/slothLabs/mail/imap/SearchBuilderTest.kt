@@ -29,7 +29,7 @@ import javax.mail.search.SizeTerm
 import javax.mail.search.SubjectTerm
 
 
-class BasicSearchBuilderTests {
+class BasicSearchBuilderTest {
 
     @Test fun buildOnNewSearchBuilderShouldReturnNone() {
         val sb = SearchBuilder()
