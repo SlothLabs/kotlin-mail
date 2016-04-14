@@ -2,13 +2,30 @@ package com.github.slothLabs.mail.imap
 
 import java.util.Date
 import javax.mail.search.AndTerm
+import javax.mail.search.BodyTerm
 import javax.mail.search.ComparisonTerm
 import javax.mail.search.FromStringTerm
 import javax.mail.search.NotTerm
 import javax.mail.search.OrTerm
+import javax.mail.search.ReceivedDateTerm
 import javax.mail.search.SearchTerm
 import javax.mail.search.SentDateTerm
 import javax.mail.search.SizeTerm
+import javax.mail.search.SubjectTerm
+
+object ReceivedDate {
+    infix fun eq(date: Date) = ReceivedDateTerm(ComparisonTerm.EQ, date)
+
+    infix fun ne(date: Date) = ReceivedDateTerm(ComparisonTerm.NE, date)
+
+    infix fun lt(date: Date) = ReceivedDateTerm(ComparisonTerm.LT, date)
+
+    infix fun le(date: Date) = ReceivedDateTerm(ComparisonTerm.LE, date)
+
+    infix fun gt(date: Date) = ReceivedDateTerm(ComparisonTerm.GT, date)
+
+    infix fun ge(date: Date) = ReceivedDateTerm(ComparisonTerm.GE, date)
+}
 
 object SentDate {
     infix fun eq(date: Date) = SentDateTerm(ComparisonTerm.EQ, date)
@@ -37,13 +54,6 @@ object Size {
 
     infix fun ge(size: Int) = SizeTerm(ComparisonTerm.GE, size)
 }
-
-val FromStringTerm.from: String
-    get() = pattern
-
-val SizeTerm.size: Int
-    get() = number
-
 
 infix fun SearchTerm.and(other: SearchTerm): SearchTerm = AndTerm(this, other)
 
