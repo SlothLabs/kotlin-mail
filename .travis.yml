@@ -18,6 +18,6 @@ jdk:
 script:
   - jdk_switcher use oraclejdk8
   - mvn test -f ./pom.xml
-  
+
 after_success:
   - bash <(curl -s https://codecov.io/bash)
