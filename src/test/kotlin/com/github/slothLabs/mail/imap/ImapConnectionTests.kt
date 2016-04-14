@@ -79,4 +79,132 @@ class ImapConnectionTests {
 
         assertTrue(processed)
     }
+<<<<<<< Updated upstream
+=======
+
+    @Test fun searchStuff() {
+        val emailAddress = "test@localhost.com"
+        val fromAddress = "from@localhost.com"
+        val password = "password"
+        val subject = "Test Email"
+        val testBodyText = "Body Text goes here!"
+
+        greenMail.setUser(emailAddress, password)
+
+        GreenMailUtil.sendTextEmailTest(emailAddress, fromAddress, subject, testBodyText)
+
+        var processed = false
+
+        val conInfo = ConnectionInformation(host, port, emailAddress, password)
+        val msgList = mutableListOf<Message>()
+        imap(conInfo) {
+            folder("INBOX", FolderModes.ReadOnly) {
+                preFetchBy(FetchProfileItem.MESSAGE)
+                val results = search {
+                    withFrom(fromAddress)
+                    withSentOnOrBefore(Date())
+                }
+                msgList.addAll(results)
+
+
+                processed = true
+            }
+        }
+
+        assertTrue(msgList.isNotEmpty())
+
+        val first = msgList[0]
+        assertEquals(fromAddress, first.from)
+        assertEquals(testBodyText.trim(), first.bodyText.trim())
+        assertNotNull(first.uid)
+        assertFalse(first.headers.isEmpty())
+
+        assertTrue(processed)
+    }
+
+    @Test fun otherSearchStuff() {
+        val emailAddress = "test@localhost.com"
+        val fromAddress = "from@localhost.com"
+        val password = "password"
+        val subject = "Test Email"
+        val testBodyText = "Body Text goes here!"
+
+        greenMail.setUser(emailAddress, password)
+
+        GreenMailUtil.sendTextEmailTest(emailAddress, fromAddress, subject, testBodyText)
+
+        var processed = false
+
+        val conInfo = ConnectionInformation(host, port, emailAddress, password)
+        val msgList = mutableListOf<Message>()
+        imap(conInfo) {
+            folder("INBOX", FolderModes.ReadOnly) {
+                preFetchBy(FetchProfileItem.MESSAGE)
+                val results = search {
+                    + from(fromAddress)
+                    + to(emailAddress)
+                    - subject("Testing")
+
+                    + sentOnOrBefore(Date())
+                }
+                msgList.addAll(results)
+
+
+                processed = true
+            }
+        }
+
+        assertTrue(msgList.isNotEmpty())
+
+        val first = msgList[0]
+        assertEquals(fromAddress, first.from)
+        assertEquals(testBodyText.trim(), first.bodyText.trim())
+        assertNotNull(first.uid)
+        assertFalse(first.headers.isEmpty())
+
+        assertTrue(processed)
+    }
+
+    @Test fun tryingDetachStuff() {
+        val emailAddress = "test@localhost.com"
+        val fromAddress = "from@localhost.com"
+        val password = "password"
+        val subject = "Test Email"
+        val testBodyText = "Body Text goes here!"
+
+        greenMail.setUser(emailAddress, password)
+
+        GreenMailUtil.sendTextEmailTest(emailAddress, fromAddress, subject, testBodyText)
+
+        var processed = false
+
+        val conInfo = ConnectionInformation(host, port, emailAddress, password)
+        val msgList = mutableListOf<Message>()
+        imap(conInfo) {
+            folder("INBOX", FolderModes.ReadOnly) {
+                val results = search {
+                    + from(fromAddress)
+                    + to(emailAddress)
+                    - subject("Testing")
+
+                    + sentOnOrBefore(Date())
+                }
+                results.detach()
+                msgList.addAll(results)
+
+                processed = true
+            }
+        }
+
+        assertTrue(msgList.isNotEmpty())
+
+        val first = msgList[0]
+        assertEquals(fromAddress, first.from)
+        assertEquals(testBodyText.trim(), first.bodyText.trim())
+        assertNotNull(first.uid)
+        assertFalse(first.headers.isEmpty())
+
+        assertTrue(processed)
+    }
+>>>>>>> Stashed changes
 }
