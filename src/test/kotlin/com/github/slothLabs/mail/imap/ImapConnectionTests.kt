@@ -8,10 +8,12 @@ import org.funktionale.option.Option
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import java.util.Date
 
+@Ignore
 class ImapConnectionTests {
     @get:Rule
     val greenMail = GreenMailRule(ServerSetupTest.SMTP_IMAP)

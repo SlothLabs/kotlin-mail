@@ -237,11 +237,3 @@ class SearchBuilder {
     operator fun SearchTerm.unaryMinus() = terms.add(!this)
 }
 
-infix fun SearchTerm.and(other: SearchTerm): SearchTerm = AndTerm(this, other)
-
-infix fun SearchTerm.or(other: SearchTerm): SearchTerm = OrTerm(this, other)
-
-operator fun SearchTerm.not(): SearchTerm = if (this is NotTerm) this.term else NotTerm(this)
-
-operator fun SearchTerm.plus(other: SearchTerm) = AndTerm(this, other)
-
