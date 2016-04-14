@@ -35,8 +35,7 @@
         </repository>
 
         <repository>
-            <id>central</id>
-            <name>bintray</name>
+            <id>jcenter</id>
             <url>http://jcenter.bintray.com</url>
         </repository>
     </repositories>
@@ -159,6 +158,26 @@
                         <phase>pre-site</phase>
                         <goals>
                             <goal>dokka</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.7.2.201409121644</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
                         </goals>
                     </execution>
                 </executions>

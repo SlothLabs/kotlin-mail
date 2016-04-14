@@ -13,7 +13,7 @@ import org.junit.Rule
 import org.junit.Test
 import java.util.Date
 
-class ImapConnectionTests {
+class ImapConnectionTest {
     @get:Rule
     val greenMail = GreenMailRule(ServerSetupTest.SMTP_IMAP)
 
