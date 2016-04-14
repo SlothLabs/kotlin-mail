@@ -10,7 +10,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-class ImapConnectionTests {
+class ImapConnectionTest {
     @get:Rule
     val greenMail = GreenMailRule(ServerSetupTest.SMTP_IMAP)
 
