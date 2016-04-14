@@ -4,23 +4,21 @@ import com.sun.mail.imap.ModifiedSinceTerm
 import com.sun.mail.imap.OlderTerm
 import com.sun.mail.imap.YoungerTerm
 import org.funktionale.option.Option
-import org.funktionale.option.Option.*
+import org.funktionale.option.Option.None
+import org.funktionale.option.Option.Some
 import java.util.Date
 import javax.mail.Flags
-import javax.mail.internet.InternetAddress
 import javax.mail.Message
+import javax.mail.internet.InternetAddress
 import javax.mail.internet.MimeMessage.RecipientType
 import javax.mail.search.AndTerm
 import javax.mail.search.BodyTerm
-import javax.mail.search.ComparisonTerm
 import javax.mail.search.FlagTerm
 import javax.mail.search.FromStringTerm
 import javax.mail.search.FromTerm
 import javax.mail.search.HeaderTerm
 import javax.mail.search.MessageIDTerm
 import javax.mail.search.MessageNumberTerm
-import javax.mail.search.NotTerm
-import javax.mail.search.OrTerm
 import javax.mail.search.ReceivedDateTerm
 import javax.mail.search.RecipientStringTerm
 import javax.mail.search.RecipientTerm
@@ -102,33 +100,33 @@ class SearchBuilder {
 
     fun withReceived(comp: Int, date: Date) = with(received(comp, date))
 
-    fun receivedOn(date: Date) = received(ComparisonTerm.EQ, date)
+    fun receivedOn(date: Date) = ReceivedDate eq date
 
     fun withReceivedOn(date: Date) = with(receivedOn(date))
 
-    fun receivedOnOrAfter(date: Date) = received(ComparisonTerm.GE, date)
+    fun receivedOnOrAfter(date: Date) = ReceivedDate ge date
 
     fun withReceivedOnOrAfter(date: Date) = with(receivedOnOrAfter(date))
 
-    fun receivedAfter(date: Date) = received(ComparisonTerm.GT, date)
+    fun receivedAfter(date: Date) = ReceivedDate gt date
 
     fun withReceivedAfter(date: Date) = with(receivedAfter(date))
 
-    fun receivedOnOrBefore(date: Date) = received(ComparisonTerm.LE, date)
+    fun receivedOnOrBefore(date: Date) = ReceivedDate le date
 
     fun withReceivedOnOrBefore(date: Date) = with(receivedOnOrBefore(date))
 
-    fun receivedBefore(date: Date) = received(ComparisonTerm.LT, date)
+    fun receivedBefore(date: Date) = ReceivedDate lt date
 
     fun withReceivedBefore(date: Date) = with(receivedBefore(date))
 
-    fun notReceivedOn(date: Date) = received(ComparisonTerm.NE, date)
+    fun notReceivedOn(date: Date) = ReceivedDate ne date
 
     fun withNotReceivedOn(date: Date) = with(notReceivedOn(date))
 
-    fun receivedBetween(dateRange: ClosedRange<Date>) = receivedBetween(dateRange.start, dateRange.endInclusive)
+    fun receivedBetween(dateRange: ClosedRange<Date>) = ReceivedDate between dateRange
 
-    fun receivedBetween(earliest: Date, latest: Date) = receivedOnOrAfter(earliest) and receivedOnOrBefore(latest)
+    fun receivedBetween(earliest: Date, latest: Date) = ReceivedDate between earliest .. latest
 
     fun withReceivedBetween(dateRange: ClosedRange<Date>) = with(receivedBetween(dateRange))
 
@@ -138,33 +136,33 @@ class SearchBuilder {
 
     fun withSent(comp: Int, date: Date) = with(sent(comp, date))
 
-    fun sentOn(date: Date) = sent(ComparisonTerm.EQ, date)
+    fun sentOn(date: Date) = SentDate eq date
 
     fun withSentOn(date: Date) = with(sentOn(date))
 
-    fun sentOnOrAfter(date: Date) = sent(ComparisonTerm.GE, date)
+    fun sentOnOrAfter(date: Date) = SentDate ge date
 
     fun withSentOnOrAfter(date: Date) = with(sentOnOrAfter(date))
 
-    fun sentAfter(date: Date) = sent(ComparisonTerm.GT, date)
+    fun sentAfter(date: Date) = SentDate gt date
 
     fun withSentAfter(date: Date) = with(sentAfter(date))
 
-    fun sentOnOrBefore(date: Date) = sent(ComparisonTerm.LE, date)
+    fun sentOnOrBefore(date: Date) = SentDate le date
 
     fun withSentOnOrBefore(date: Date) = with(sentOnOrBefore(date))
 
-    fun sentBefore(date: Date) = sent(ComparisonTerm.LT, date)
+    fun sentBefore(date: Date) = SentDate lt date
 
     fun withSentBefore(date: Date) = with(sentBefore(date))
 
-    fun notSentOn(date: Date) = sent(ComparisonTerm.NE, date)
+    fun notSentOn(date: Date) = SentDate ne date
 
     fun withNotSentOn(date: Date) = with(notSentOn(date))
 
-    fun sentBetween(dateRange: ClosedRange<Date>) = sentBetween(dateRange.start, dateRange.endInclusive)
+    fun sentBetween(dateRange: ClosedRange<Date>) = SentDate between dateRange
 
-    fun sentBetween(earliest: Date, latest: Date) = sentOnOrAfter(earliest) and sentOnOrBefore(latest)
+    fun sentBetween(earliest: Date, latest: Date) = SentDate between earliest .. latest
 
     fun withSentBetween(dateRange: ClosedRange<Date>) = with(sentBetween(dateRange))
 
@@ -182,33 +180,33 @@ class SearchBuilder {
 
     fun withSize(comp: Int, size: Int) = with(size(comp, size))
 
-    fun sizeIs(size: Int) = size(ComparisonTerm.EQ, size)
+    fun sizeIs(size: Int) = Size eq size
 
     fun withSizeIs(size: Int) = with(sizeIs(size))
 
-    fun sizeIsAtLeast(size: Int) = size(ComparisonTerm.GE, size)
+    fun sizeIsAtLeast(size: Int) = Size ge size
 
     fun withSizeIsAtLeast(size: Int) = with(sizeIsAtLeast(size))
 
-    fun sizeIsGreaterThan(size: Int) = size(ComparisonTerm.GT, size)
+    fun sizeIsGreaterThan(size: Int) = Size gt size
 
     fun withSizeIsGreaterThan(size: Int) = with(sizeIsGreaterThan(size))
 
-    fun sizeIsNoMoreThan(size: Int) = size(ComparisonTerm.LE, size)
+    fun sizeIsNoMoreThan(size: Int) = Size le size
 
     fun withSizeIsNoMoreThan(size: Int) = with(sizeIsNoMoreThan(size))
 
-    fun sizeIsLessThan(size: Int) = size(ComparisonTerm.LT, size)
+    fun sizeIsLessThan(size: Int) = Size lt size
 
     fun withSizeIsLessThan(size: Int) = with(sizeIsLessThan(size))
 
-    fun sizeIsNot(size: Int) = size(ComparisonTerm.NE, size)
+    fun sizeIsNot(size: Int) = Size ne size
 
     fun withSizeIsNot(size: Int) = with(sizeIsNot(size))
 
-    fun sizeBetween(sizeRange: IntRange) = sizeBetween(sizeRange.start, sizeRange.endInclusive)
+    fun sizeBetween(sizeRange: IntRange) = Size between sizeRange
 
-    fun sizeBetween(smallest: Int, largest: Int) = sizeIsAtLeast(smallest) and sizeIsNoMoreThan(largest)
+    fun sizeBetween(smallest: Int, largest: Int) = Size between smallest .. largest
 
     fun withSizeBetween(sizeRange: IntRange) = with(sizeBetween(sizeRange))
 

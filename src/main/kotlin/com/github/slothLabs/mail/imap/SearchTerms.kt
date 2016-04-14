@@ -2,16 +2,13 @@ package com.github.slothLabs.mail.imap
 
 import java.util.Date
 import javax.mail.search.AndTerm
-import javax.mail.search.BodyTerm
 import javax.mail.search.ComparisonTerm
-import javax.mail.search.FromStringTerm
 import javax.mail.search.NotTerm
 import javax.mail.search.OrTerm
 import javax.mail.search.ReceivedDateTerm
 import javax.mail.search.SearchTerm
 import javax.mail.search.SentDateTerm
 import javax.mail.search.SizeTerm
-import javax.mail.search.SubjectTerm
 
 object ReceivedDate {
     infix fun eq(date: Date) = ReceivedDateTerm(ComparisonTerm.EQ, date)
@@ -25,6 +22,8 @@ object ReceivedDate {
     infix fun gt(date: Date) = ReceivedDateTerm(ComparisonTerm.GT, date)
 
     infix fun ge(date: Date) = ReceivedDateTerm(ComparisonTerm.GE, date)
+
+    infix fun between(range: ClosedRange<Date>) = (this ge range.start) and (this le range.endInclusive)
 }
 
 object SentDate {
@@ -39,6 +38,8 @@ object SentDate {
     infix fun gt(date: Date) = SentDateTerm(ComparisonTerm.GT, date)
 
     infix fun ge(date: Date) = SentDateTerm(ComparisonTerm.GE, date)
+
+    infix fun between(range: ClosedRange<Date>) = (this ge range.start) and (this le range.endInclusive)
 }
 
 object Size {
@@ -53,6 +54,8 @@ object Size {
     infix fun gt(size: Int) = SizeTerm(ComparisonTerm.GT, size)
 
     infix fun ge(size: Int) = SizeTerm(ComparisonTerm.GE, size)
+
+    infix fun between(range: ClosedRange<Int>) = (this ge range.start) and (this le range.endInclusive)
 }
 
 infix fun SearchTerm.and(other: SearchTerm): SearchTerm = AndTerm(this, other)

@@ -6,7 +6,7 @@ import com.sun.mail.imap.YoungerTerm
 import org.funktionale.option.Option.*
 import org.junit.Assert.*
 import org.junit.Test
-import java.util.*
+import java.util.Date
 import javax.mail.Flags
 import javax.mail.internet.InternetAddress
 import javax.mail.internet.MimeMessage
