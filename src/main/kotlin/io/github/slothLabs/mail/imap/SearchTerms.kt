@@ -1,4 +1,4 @@
-package com.github.slothLabs.mail.imap
+package io.github.slothLabs.mail.imap
 
 import java.util.Date
 import javax.mail.search.AndTerm

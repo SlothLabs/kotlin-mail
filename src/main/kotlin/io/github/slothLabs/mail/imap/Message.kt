@@ -1,4 +1,4 @@
-package com.github.slothLabs.mail.imap
+package io.github.slothLabs.mail.imap
 
 import com.sun.mail.imap.IMAPFolder
 import com.sun.mail.imap.IMAPMessage as MailMessage
@@ -9,7 +9,7 @@ import javax.mail.Header
 
 data class MessageHeader(val name: String, val value: String)
 
-class Message(private val mailMessage: MailMessage) {
+class Message(private val mailMessage: com.sun.mail.imap.IMAPMessage) {
 
     val from: String = mailMessage.from[0].toString()
     val bodyText: String = mailMessage.content as String
@@ -42,4 +42,4 @@ operator fun Option<Message>.invoke(action: Message.() -> Unit) {
     }
 }
 
-fun MailMessage.getUID() = (folder as IMAPFolder).getUID(this)
+fun com.sun.mail.imap.IMAPMessage.getUID() = (folder as IMAPFolder).getUID(this)

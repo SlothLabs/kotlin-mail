@@ -1,4 +1,4 @@
-package com.github.slothLabs.mail.imap
+package io.github.slothLabs.mail.imap
 
 import com.icegreen.greenmail.junit.GreenMailRule
 import com.icegreen.greenmail.util.GreenMailUtil
@@ -148,11 +148,11 @@ class ImapConnectionTest {
             folder("INBOX", FolderModes.ReadOnly) {
                 preFetchBy(FetchProfileItem.MESSAGE)
                 val results = search {
-                    + from(fromAddress)
-                    + to(emailAddress)
-                    - subject("Testing")
+                    +from(fromAddress)
+                    +to(emailAddress)
+                    -subject("Testing")
 
-                    + sentOnOrBefore(Date())
+                    +sentOnOrBefore(Date())
                 }
                 msgList.addAll(results)
 

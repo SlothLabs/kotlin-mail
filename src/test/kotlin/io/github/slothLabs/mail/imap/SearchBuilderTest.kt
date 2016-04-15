@@ -1,4 +1,4 @@
-package com.github.slothLabs.mail.imap
+package io.github.slothLabs.mail.imap
 
 import com.sun.mail.imap.ModifiedSinceTerm
 import com.sun.mail.imap.OlderTerm
