@@ -8,7 +8,6 @@ import org.funktionale.option.Option
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import java.util.Date
@@ -45,8 +44,9 @@ class ImapConnectionTest {
         var processed = false
         imap(host, port, user = emailAddress, password = password) {
             folder("INBOX", FolderModes.ReadOnly) {
-                assertTrue(messages[1] is Option.Some)
-                messages[1] {
+                val msg = this[1]
+                assertTrue(msg is Option.Some)
+                msg {
                     assertEquals(testBodyText, bodyText)
                     assertNotNull(uid)
                     assertFalse(headers.isEmpty())
@@ -75,8 +75,9 @@ class ImapConnectionTest {
         val conInfo = ConnectionInformation(host, port, emailAddress, password)
         imap(conInfo) {
             folder("INBOX", FolderModes.ReadOnly) {
-                assertTrue(messages[1] is Option.Some)
-                messages[1] {
+                val msg = this[1]
+                assertTrue(msg is Option.Some)
+                msg {
                     assertEquals(testBodyText, bodyText)
                     assertNotNull(uid)
                     assertFalse(headers.isEmpty())

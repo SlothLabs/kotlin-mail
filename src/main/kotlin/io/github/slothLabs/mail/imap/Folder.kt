@@ -29,11 +29,6 @@ enum class FolderModes(private val javaMailMode: Int) {
  */
 class Folder(private val javaMailFolder: IMAPFolder) {
 
-    /**
-     * The messages within this folder.
-     */
-    val messages = MessageContainer(javaMailFolder)
-
     private var preFetchInfo = FetchProfile()
 
     /**
@@ -92,5 +87,11 @@ class Folder(private val javaMailFolder: IMAPFolder) {
     fun close(expunge: Boolean) {
         javaMailFolder.close(expunge)
     }
+
+    /**
+     * Operator to allow accessing messages in this folder via bracket syntax. The supplied
+     * index is expected to be a valid message number within this folder.
+     */
+    operator fun get(i: Int): Option<Message> = javaMailFolder[i];
 }
 
