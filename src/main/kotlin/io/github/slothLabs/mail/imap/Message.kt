@@ -43,9 +43,7 @@ class Message(private val mailMessage: com.sun.mail.imap.IMAPMessage) {
     /**
      * Gets the message's UID value.
      */
-    val uid: Long by lazy {
-        mailMessage.getUID()
-    }
+    val uid: Long = mailMessage.getUID()
 
     /**
      * Gets the collection of headers from the message (as an immutable [List]).

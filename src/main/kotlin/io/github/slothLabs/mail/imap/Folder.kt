@@ -73,7 +73,7 @@ class Folder(private val javaMailFolder: IMAPFolder) {
      *
      * @param test the `FetchProfileItem`(s) to build the new prefetch information with.
      */
-    fun preFetchBy(vararg test: IMAPFolder.FetchProfileItem) {
+    fun preFetchBy(vararg test: FetchProfile.Item) {
         preFetchInfo = FetchProfile()
         test.forEach { preFetchInfo.add(it) }
     }
