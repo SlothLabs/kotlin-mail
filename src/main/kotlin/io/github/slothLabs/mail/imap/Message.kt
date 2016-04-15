@@ -1,11 +1,10 @@
 package io.github.slothLabs.mail.imap
 
 import com.sun.mail.imap.IMAPFolder
-import com.sun.mail.imap.IMAPMessage as MailMessage
-
 import org.funktionale.option.Option
-import org.funktionale.option.Option.*
-import javax.mail.Header
+import org.funktionale.option.Option.None
+import org.funktionale.option.Option.Some
+import com.sun.mail.imap.IMAPMessage as MailMessage
 
 data class MessageHeader(val name: String, val value: String)
 
@@ -19,8 +18,7 @@ class Message(private val mailMessage: com.sun.mail.imap.IMAPMessage) {
         val res = mutableListOf<MessageHeader>()
         val headersEnum = mailMessage.allHeaders
         headersEnum.iterator().forEach {
-            val hdr = it as Header
-            val messageHeader = MessageHeader(hdr.name, hdr.value)
+            val messageHeader = MessageHeader(it.name, it.value)
             res.add(messageHeader)
         }
 
