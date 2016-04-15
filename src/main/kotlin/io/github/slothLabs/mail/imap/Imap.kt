@@ -1,13 +1,11 @@
 package io.github.slothLabs.mail.imap
 
 import com.sun.mail.imap.IMAPFolder
-import com.sun.mail.imap.IMAPMessage
 import java.io.Closeable
-import java.util.*
-import javax.mail.Message as MailMessage
+import java.util.Properties
 import javax.mail.Session
 import javax.mail.Store
-import javax.mail.search.SearchTerm
+import javax.mail.Message as MailMessage
 
 class Imap internal constructor(private val store: Store): Closeable, AutoCloseable {
 
