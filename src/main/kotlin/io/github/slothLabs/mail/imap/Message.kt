@@ -28,7 +28,7 @@ class Message(private val mailMessage: com.sun.mail.imap.IMAPMessage) {
 
 class MessageContainer(private val javaMailFolder: IMAPFolder) {
     operator fun get(i: Int): Option<Message> {
-        val msg = javaMailFolder.getMessage(i) as com.sun.mail.imap.IMAPMessage
+        val msg = javaMailFolder.getMessage(i) as com.sun.mail.imap.IMAPMessage? ?: return None
         return Some(Message(msg))
     }
 }
