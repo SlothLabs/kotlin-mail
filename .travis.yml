@@ -1,11 +1,11 @@
 language: java
-sudo: false
+jdk:
+  - oraclejdk8
 install:
   - mvn --settings .travis/settings.xml install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
 before_install:
   - echo $GPG_SECRET_KEYS | base64 --decode | $GPG_EXECUTABLE --import
   - echo $GPG_OWNERTRUST | base64 --decode | $GPG_EXECUTABLE --import-ownertrust
-
 deploy:
   -
     provider: script
@@ -14,6 +14,7 @@ deploy:
     on:
       repo: SlothLabs/kotlin-mail
       branch: master
+      jdk: oraclejdk8
   -
     provider: script
     script: .travis/deploy.sh
@@ -21,6 +22,6 @@ deploy:
     on:
       repo: SlothLabs/kotlin-mail
       tags: true
-
+      jdk: oraclejdk8
 after_success:
   - bash <(curl -s https://codecov.io/bash)
