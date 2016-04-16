@@ -1,3 +1,6 @@
+#!/bin/bash
+cd `dirname $0`/..
+
 if [ ! -z "$TRAVIS_TAG" ]
 then
     echo "on a tag -> set pom.xml <version> to $TRAVIS_TAG"
