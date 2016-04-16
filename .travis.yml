@@ -10,12 +10,14 @@ deploy:
   -
     provider: script
     script: .travis/deploy.sh
+    skip_cleanup: true
     on:
       repo: SlothLabs/kotlin-mail
       branch: master
   -
     provider: script
     script: .travis/deploy.sh
+    skip_cleanup: true
     on:
       repo: SlothLabs/kotlin-mail
       tags: true
