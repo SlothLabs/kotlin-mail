@@ -13,14 +13,12 @@ deploy:
     on:
       repo: SlothLabs/kotlin-mail
       branch: master
-      jdk: oraclejdk8
   -
     provider: script
     script: .travis/deploy.sh
     on:
       repo: SlothLabs/kotlin-mail
       tags: true
-      jdk: oraclejdk8
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
