@@ -3,6 +3,7 @@ package io.github.slothLabs.mail.imap
 import com.sun.mail.imap.IMAPFolder
 import com.sun.mail.imap.IMAPMessage
 import org.funktionale.option.Option
+import org.funktionale.option.toOption
 import javax.mail.FetchProfile
 import javax.mail.Folder
 
@@ -34,19 +35,25 @@ class Folder(private val javaMailFolder: IMAPFolder) {
     /**
      * Search this folder using the [SearchBuilder] initialized within
      * the given block, using any pre-fetch information set via either
-     * [preFetchBy] method.
+     * [preFetchBy] method. Any sorting applied to the `SearchBuilder`
+     * within the given block is applied to the returned results.
      *
      * @param block the block to use to initialize the [SearchBuilder].
      *
-     * @return a [List] of [Message] instances that match the search, pre-fetched
-     *         if applicable.
+     * @return a `List` of [Message] instances that match the search, pre-fetched
+     *         if applicable, and sorted if applicable.
      */
     fun search(block: SearchBuilder.() -> Unit): List<Message> {
         val builder = SearchBuilder()
         builder.block()
         val searchTerm = builder.build()
 
-        val javaMailMessages = searchTerm.map { javaMailFolder.search(it) }
+        val javaMailMessages = if (builder.hasSortTerms()) {
+            val sortTerms = builder.getSortTerms().map { it.toSortTerm() }.toTypedArray()
+            searchTerm.map { javaMailFolder.getSortedMessages(sortTerms, it)}
+        } else {
+            searchTerm.map { javaMailFolder.search(it) }
+        }
 
         javaMailMessages.map { javaMailFolder.fetch(it, preFetchInfo) }
         val messages = mutableListOf<Message>()
@@ -55,6 +62,7 @@ class Folder(private val javaMailFolder: IMAPFolder) {
                 messages.add(Message(jmm as IMAPMessage))
             }
         }
+
         return messages
     }
 
@@ -86,6 +94,37 @@ class Folder(private val javaMailFolder: IMAPFolder) {
      */
     fun close(expunge: Boolean) {
         javaMailFolder.close(expunge)
+    }
+
+    /**
+     * Sorts the messages in the folder using the [SortBuilder] initialized
+     * within the given block, using any pre-fetch information set via either
+     * [preFetchBy] method. Note that this only sorts the messages as returned
+     * from this method; the ordering within the IMAP server itself remains
+     * unchanged.
+     *
+     * @param block the block to use to initialize the [SortBuilder]
+     *
+     * @return a `List` of [Message] instances, sorted per the terms applied
+     *         via the [SortBuilder], and pre-fetched if applicable.
+     */
+    fun sortedBy(block: SortBuilder.() -> Unit): List<Message> {
+        val sortBuilder = SortBuilder()
+        sortBuilder.block()
+
+        val sortTerms = sortBuilder.build().map { it.toSortTerm() }.toTypedArray()
+        val javaMailMessages = javaMailFolder.getSortedMessages(sortTerms).toOption()
+
+        javaMailMessages.map { javaMailFolder.fetch(it, preFetchInfo) }
+
+        val messages = mutableListOf<Message>()
+        javaMailMessages.map {
+            for (jmm in it) {
+                messages.add(Message(jmm as IMAPMessage))
+            }
+        }
+
+        return messages
     }
 
     /**
