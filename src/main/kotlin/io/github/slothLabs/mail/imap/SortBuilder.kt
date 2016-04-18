@@ -114,7 +114,7 @@ enum class Sort(private val javaMailSortTerm: SortTerm) {
 
     companion object {
         /**
-         * Creates an `Option<Sort>` from the given JavaMail `SortTerm`. This message *should*
+         * Creates an `Option<Sort>` from the given JavaMail `SortTerm`. This method *should*
          * always return a `Some<Sort>` instance; if it returns `None`, that would likely indicate
          * an unexpected (read: new) `SortTerm` was supplied and the [Sort] enum hasn't been updated
          * to reflect the change.
