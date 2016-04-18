@@ -4,6 +4,7 @@ import com.icegreen.greenmail.junit.GreenMailRule
 import com.icegreen.greenmail.util.GreenMailUtil
 import com.icegreen.greenmail.util.ServerSetupTest
 import com.sun.mail.imap.IMAPFolder.FetchProfileItem
+import com.sun.mail.imap.SortTerm
 import org.funktionale.option.Option
 import org.junit.After
 import org.junit.Assert.*
@@ -245,8 +246,10 @@ class ImapConnectionTest {
                 val results = sortedBy {
                     +From
                     +To
-                    -Sort.Size
+                    -SortTerm.SIZE
                     -Subject
+                    +SortTerm.ARRIVAL
+                    -Sort.fromSortTerm(SortTerm.CC).get()
                 }
 
                 msgList.addAll(results)
