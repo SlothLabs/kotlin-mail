@@ -82,6 +82,8 @@ class SearchBuilder {
 
     private val terms = mutableListOf<SearchTerm>()
 
+    private val sortedBy = mutableListOf<Sort>()
+
     /**
      * Creates an `Option` containing either `None` or the combined
      * `SearchTerm` instance that results from merging all of the terms
@@ -96,6 +98,21 @@ class SearchBuilder {
         if (terms.isEmpty()) None
         else if (terms.size == 1) Some(terms[0])
         else Some(terms.reduce { first, second -> AndTerm(first, second) })
+
+    /**
+     * Whether or not sort terms have been applied to the search.
+     *
+     * @return `true` if a sort has been applied; `false` otherwise.
+     */
+    fun hasSortTerms() = sortedBy.isNotEmpty()
+
+    /**
+     * Gets the sort terms (if any) that have been applied to the search.
+     *
+     * @return a `List` of [Sort] instances applied to the search, or an
+     *         empty list if no sort has been applied.
+     */
+    fun getSortTerms(): List<Sort> = sortedBy
 
     /**
      * Creates and returns a `FromTerm` given an `InternetAddress` instance.
@@ -942,6 +959,19 @@ class SearchBuilder {
      * @param term the `SearchTerm` to add.
      */
     fun with(term: SearchTerm) = terms.add(term)
+
+    /**
+     * Sorts the search results by the terms applied in the block.
+     *
+     * @param block the block to use to initialize the [SortBuilder]
+     */
+    fun sortedBy(block: SortBuilder.() -> Unit) {
+        val sortBuilder = SortBuilder()
+
+        sortBuilder.block()
+
+        sortedBy.addAll(sortBuilder.build())
+    }
 
     /**
      * Adds the `SearchTerm` operand to this `SearchBuilder`.
