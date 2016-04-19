@@ -8,6 +8,10 @@
     <artifactId>kotlin-mail</artifactId>
     <version>0.1.0-SNAPSHOT</version>
 
+    <name>kotlin-mail</name>
+
+    <description>A kotlin-esque wrapper/replacement for JavaMail.</description>
+
     <url>https://github.com/SlothLabs/kotlin-mail</url>
     <licenses>
         <license>
