@@ -243,7 +243,7 @@
                 <configuration>
                     <descriptors>
                         <descriptor>src/assembly/sources.xml</descriptor>
-                        <descriptor>src/assembly/javadocs.xml</descriptor>
+                        <descriptor>src/assembly/javadoc.xml</descriptor>
                     </descriptors>
                 </configuration>
             </plugin>
