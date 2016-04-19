@@ -1,4 +1,4 @@
-# kotlin-mail #
+# kotlin-mail [![Build Status](https://travis-ci.org/SlothLabs/kotlin-mail.svg?branch=master)](https://travis-ci.org/SlothLabs/kotlin-mail)  [![codecov.io](https://codecov.io/github/SlothLabs/kotlin-mail/coverage.svg?branch=master)](https://codecov.io/github/SlothLabs/kotlin-mail?branch=master)#
 ## A kotlin-esque wrapper for JavaMail. ##
 
 [JavaMail](https://javamail.java.net/) is the defacto standard library for interacting with email from the Java platform. It's been around for ages (at least 2002, based on what I see in the [JSR docs](https://jcp.org/en/jsr/detail?id=919)), has been used in virtually every Java project requiring email access since then, and is about as bullet proof as you can get by now.
