@@ -9,6 +9,22 @@ Besides, it's *Java*, which if you're looking here is most importantly *not Kotl
 
 (If you some how got here without knowing what Kotlin is, I beseech you to venture to http://kotlinlang.org/. It's a new-ish JVM language from JetBrains, the company who makes the IntelliJ line of IDE's. It's got a lot of awesome features that will make going back to "regular" Java depressing.)
 
+## QuickStart and Early-WIP Caveat ##
+
+Kotlin-mail is available in Maven Central; to get started with it, add the following dependency to your pom.xml file:
+
+```xml
+    <dependency>
+        <groupId>io.github.slothLabs</groupId>
+        <artifactId>kotlin-mail</artifactId>
+        <version>0.1.0</version>
+    </dependency>
+```
+
+(If you use Gradle or some other build tool that connects to Maven Central, I'm sure you can translate that into your language of choice. Or just harass me in the issues and I'll update it when I get annoyed enough.)
+
+If it's not immediately apparent from the sub-1.0 version number, this is still in extremely early alpha/beta/WIP stages. I'll do my damndest to make sure that every release is as stable as I can, but until this gets up to 1.0.0 I make no promises about correctness or backwards compatibility. I'm planning on keeping with a quasi-semantic versioning scheme as much as possible, with the caveat that until 1.0.0 minor version changes can (and probably will) break the API. Anyways, on with the show...
+
 ## A Better JavaMail (for now) ##
 
 Because JavaMail is so thoroughly tested, it'd be foolish to just scrap it completely. Right now, the main goal of kotlin-mail is to supplement the JavaMail functionality with stuff that makes it easier to use - at least, from a kotlin perspective. Stuff like:
