@@ -150,4 +150,3 @@ fun Store.connect(connectionInformation: ConnectionInformation) = this.connect(
         connectionInformation.user,
         connectionInformation.password
 )
-

@@ -3,6 +3,9 @@ package io.github.slothLabs.mail.imap
 import com.sun.mail.imap.ModifiedSinceTerm
 import com.sun.mail.imap.OlderTerm
 import com.sun.mail.imap.YoungerTerm
+import io.kotlintest.specs.WordSpec
+import io.kotlintest.matchers.*
+
 import org.funktionale.option.Option.*
 import org.junit.Assert.*
 import org.junit.Test
@@ -29,64 +32,92 @@ import javax.mail.search.SizeTerm
 import javax.mail.search.SubjectTerm
 
 
-class BasicSearchBuilderTest {
+class BasicSearchBuilderTest : WordSpec() {
 
-    @Test fun buildOnNewSearchBuilderShouldReturnNone() {
-        val sb = SearchBuilder()
+    var sb: SearchBuilder = SearchBuilder()
 
-        val res = sb.build()
-
-        assertTrue(res is None)
+    override fun beforeEach() {
+        sb = SearchBuilder()
     }
 
-    @Test fun fromMethodsShouldConstructAppropriateSearchTerms() {
-        val sb = SearchBuilder()
+    init {
+        "SearchBuilder.build" should {
+            "return None for new SearchBuilder" {
+                val res = sb.build()
 
-        val address = InternetAddress("test@drive.com")
-        val fromInternetAddress = sb.from(address)
-        assertTrue(fromInternetAddress is FromTerm)
-        assertEquals(fromInternetAddress.address, address)
+                res should be a None::class
+            }
 
-        val str = "another@example.com"
-        val fromString = sb.from(str)
-        assertTrue(fromString is FromStringTerm)
-        assertEquals(fromString.pattern, str)
-    }
+            "return Some if a term has been added to the builder" {
+                sb.withFrom("test@drive.com")
 
-    @Test fun withFromMethodsShouldProperlyFillSearchBuilderTerms() {
-        val sb1 = SearchBuilder()
+                val res = sb.build()
+                res should be a Some::class
+            }
+        }
 
-        val address = InternetAddress("test@drive.com")
-        sb1.withFrom(address)
-        val terms1 = sb1.build()
-        assertTrue(terms1 is Some)
-        val fromTerm: FromTerm = terms1.get() as FromTerm
-        assertEquals(fromTerm.address, address)
+        "from" should {
+            "construct appropriate InternetAddress instance" {
+                val address = InternetAddress("test@drive.com")
+                val fromInternetAddress = sb.from(address)
 
-        val sb2 = SearchBuilder()
-        val str = "another@example.com"
-        sb2.withFrom(str)
-        val terms2 = sb2.build()
-        assertTrue(terms2 is Some)
-        val fromStringTerm: FromStringTerm = terms2.get() as FromStringTerm
-        assertEquals(fromStringTerm.pattern, str)
-    }
+                fromInternetAddress should be a FromTerm::class
+                fromInternetAddress.address shouldBe address
+            }
 
-    @Test fun recipientMethodsShouldConstructAppropriateSearchTerms() {
-        val sb = SearchBuilder()
-        val recipientType = MimeMessage.RecipientType.TO
+            "construct appropriate String instance" {
+                val str = "another@example.com"
+                val fromString = sb.from(str)
 
-        val address = InternetAddress("test@drive.com")
-        val recipientInternetAddress = sb.recipient(recipientType, address)
-        assertTrue(recipientInternetAddress is RecipientTerm)
-        assertEquals(recipientInternetAddress.recipientType, recipientType)
-        assertEquals(recipientInternetAddress.address, address)
+                fromString should be a FromStringTerm::class
+                fromString.pattern shouldBe str
+            }
+        }
 
-        val str = "another@example.com"
-        val recipientString = sb.recipient(recipientType, str)
-        assertTrue(recipientString is RecipientStringTerm)
-        assertEquals(recipientString.recipientType, recipientType)
-        assertEquals(recipientString.pattern, str)
+        "withFrom" should {
+            "properly fill with InternetAddress based term" {
+                val address = InternetAddress("test@drive.com")
+                sb.withFrom(address)
+                val terms = sb.build()
+                terms should be a Some::class
+                val fromTerm: FromTerm = terms.get() as FromTerm
+                fromTerm.address shouldBe address
+            }
+
+            "properly fill with String based term" {
+                val str = "another@example.com"
+                sb.withFrom(str)
+                val terms = sb.build()
+                terms should be a Some::class
+
+                val fromStringTerm: FromStringTerm = terms.get() as FromStringTerm
+                fromStringTerm.pattern shouldBe str
+            }
+        }
+
+        "recipient" should {
+            "construct appropriate InternetAddress instance" {
+                val recipientType = MimeMessage.RecipientType.TO
+
+                val address = InternetAddress("test@drive.com")
+                val recipientInternetAddress = sb.recipient(recipientType, address)
+
+                recipientInternetAddress should be a RecipientTerm::class
+                recipientInternetAddress.recipientType shouldBe recipientType
+                recipientInternetAddress.address shouldBe address
+            }
+
+            "construct appropriate String based term" {
+                val recipientType = MimeMessage.RecipientType.TO
+
+                val str = "another@example.com"
+                val recipientString = sb.recipient(recipientType, str)
+
+                recipientString should be a RecipientStringTerm::class
+                recipientString.recipientType shouldBe recipientType
+                recipientString.pattern shouldBe str
+            }
+        }
     }
 
     @Test fun withRecipientMethodsShouldProperlyFillSearchBuilderTerms() {
@@ -603,7 +634,7 @@ class BasicSearchBuilderTest {
         val startDate = Date()
         val endDate = Date()
         assertNotSame(startDate, endDate)
-        val andTerm = sb.receivedBetween(startDate .. endDate)
+        val andTerm = sb.receivedBetween(startDate..endDate)
 
         assertTrue(andTerm is AndTerm)
         with (andTerm as AndTerm) {
@@ -623,7 +654,7 @@ class BasicSearchBuilderTest {
         val startDate = Date()
         val endDate = Date()
         assertNotSame(startDate, endDate)
-        sb.withReceivedBetween(startDate .. endDate)
+        sb.withReceivedBetween(startDate..endDate)
 
         val terms = sb.build()
         assertTrue(terms is Some)
@@ -869,7 +900,7 @@ class BasicSearchBuilderTest {
         val startDate = Date()
         val endDate = Date()
         assertNotSame(startDate, endDate)
-        val andTerm = sb.sentBetween(startDate .. endDate)
+        val andTerm = sb.sentBetween(startDate..endDate)
 
         assertTrue(andTerm is AndTerm)
         with (andTerm as AndTerm) {
@@ -889,7 +920,7 @@ class BasicSearchBuilderTest {
         val startDate = Date()
         val endDate = Date()
         assertNotSame(startDate, endDate)
-        sb.withSentBetween(startDate .. endDate)
+        sb.withSentBetween(startDate..endDate)
 
         val terms = sb.build()
         assertTrue(terms is Some)
@@ -1175,7 +1206,7 @@ class BasicSearchBuilderTest {
         val startSize = 1234
         val endSize = 4321
         assertNotSame(startSize, endSize)
-        val andTerm = sb.sizeBetween(startSize .. endSize)
+        val andTerm = sb.sizeBetween(startSize..endSize)
 
         assertTrue(andTerm is AndTerm)
         with (andTerm as AndTerm) {
@@ -1195,7 +1226,7 @@ class BasicSearchBuilderTest {
         val startSize = 1234
         val endSize = 4321
         assertNotSame(startSize, endSize)
-        sb.withSizeBetween(startSize .. endSize)
+        sb.withSizeBetween(startSize..endSize)
 
         val terms = sb.build()
         assertTrue(terms is Some)
@@ -1327,8 +1358,8 @@ class BasicSearchBuilderTest {
         val youngerTerm = YoungerTerm(interval)
         val olderTerm = OlderTerm(interval)
         with (sb) {
-            + youngerTerm
-            - olderTerm
+            +youngerTerm
+            -olderTerm
         }
 
         val terms = sb.build()

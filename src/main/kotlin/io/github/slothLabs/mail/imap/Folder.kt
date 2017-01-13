@@ -24,6 +24,25 @@ enum class FolderModes(private val javaMailMode: Int) {
     internal fun toJavaMailMode() = javaMailMode
 }
 
+enum class FolderTypes(private val javaMailFolderType: Int) {
+    HoldsFolders(Folder.HOLDS_FOLDERS),
+    HoldsMessages(Folder.HOLDS_MESSAGES),
+    HoldsBoth(Folder.HOLDS_FOLDERS and Folder.HOLDS_MESSAGES);
+
+    internal fun toJavaMailFolderType() = javaMailFolderType
+
+    companion object {
+        fun fromJavaMailFolderType(javaMailFolderType: Int): FolderTypes {
+            val holdsFolders = javaMailFolderType and Folder.HOLDS_FOLDERS
+            val holdsMessages = javaMailFolderType and Folder.HOLDS_MESSAGES
+
+            if ((holdsFolders != 0) && (holdsMessages != 0)) return HoldsBoth
+            else if (holdsFolders != 0) return HoldsFolders
+            return HoldsMessages
+        }
+    }
+}
+
 /**
  * Wrapper class to provide additional functionality over the JavaMail `IMAPFolder`
  * class.
@@ -113,24 +132,35 @@ class Folder(private val javaMailFolder: IMAPFolder) {
         sortBuilder.block()
 
         val sortTerms = sortBuilder.build().map { it.toSortTerm() }.toTypedArray()
-        val javaMailMessages = javaMailFolder.getSortedMessages(sortTerms).toOption()
+        val javaMailMessages = javaMailFolder.getSortedMessages(sortTerms)
 
-        javaMailMessages.map { javaMailFolder.fetch(it, preFetchInfo) }
+        javaMailFolder.fetch(javaMailMessages, preFetchInfo)
 
-        val messages = mutableListOf<Message>()
-        javaMailMessages.map {
-            for (jmm in it) {
-                messages.add(Message(jmm as IMAPMessage))
-            }
-        }
-
-        return messages
+        return javaMailMessages.map { Message(it as IMAPMessage) }
     }
+
+    fun getMessageCount(): Int = javaMailFolder.messageCount
+
+    fun getUnreadMessageCount(): Int = javaMailFolder.unreadMessageCount
+
+    fun getNewMessageCount(): Int = javaMailFolder.newMessageCount
+
+    fun hasNewMessages(): Boolean = javaMailFolder.hasNewMessages()
+
+    fun getFolderType(): FolderTypes = FolderTypes.fromJavaMailFolderType(javaMailFolder.type)
 
     /**
      * Operator to allow accessing messages in this folder via bracket syntax. The supplied
      * index is expected to be a valid message number within this folder.
      */
     operator fun get(i: Int): Option<Message> = javaMailFolder[i];
+
+    fun messagesIn(range: ClosedRange<Int>, prefetch: Boolean = true): List<Message> {
+        val jmmMessages = javaMailFolder.getMessages(range.start, range.endInclusive);
+        if (prefetch) {
+            javaMailFolder.fetch(jmmMessages, preFetchInfo)
+        }
+        return jmmMessages.map { Message(it as IMAPMessage) }
+    }
 }
 
