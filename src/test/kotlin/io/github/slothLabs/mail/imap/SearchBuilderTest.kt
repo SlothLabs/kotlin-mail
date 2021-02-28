@@ -34,6 +34,7 @@ class SearchBuilderTest : AnnotationSpec() {
     private var sb = SearchBuilder()
 
     override fun beforeTest(testCase: TestCase) {
+        super.beforeTest(testCase)
         sb = SearchBuilder()
     }
 
@@ -1437,20 +1438,20 @@ class SearchBuilderTest : AnnotationSpec() {
     }
 
     @Test
-    fun markAsReadShouldProperlySetShouldSetSeenFlag() {
+    fun markAsReadShouldProperlyBeSet() {
         val sb1 = SearchBuilder()
         with(sb1) {
-            markAsRead(true)
+            markAsRead = true
         }
-        sb1.shouldSetSeenFlag shouldBe true
+        sb1.markAsRead shouldBe true
 
         val sb2 = SearchBuilder()
         with(sb2) {
-            markAsRead(false)
+            markAsRead = false
         }
-        sb2.shouldSetSeenFlag shouldBe false
+        sb2.markAsRead shouldBe false
 
         val sb3 = SearchBuilder()
-        sb3.shouldSetSeenFlag shouldBe false
+        sb3.markAsRead shouldBe false
     }
 }

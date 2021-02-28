@@ -292,7 +292,7 @@ class ImapConnectionTest : AnnotationSpec() {
                 preFetchBy(FetchProfileItem.MESSAGE)
                 val results = search {
                     +from(fromAddress)
-                    markAsRead(true)
+                    markAsRead = true
                 }
 
                 results.isEmpty() shouldBe false
@@ -326,7 +326,7 @@ class ImapConnectionTest : AnnotationSpec() {
                 preFetchBy(FetchProfileItem.MESSAGE)
                 val results = search {
                     +from(fromAddress)
-                    markAsRead(false)
+                    markAsRead = false
                 }
 
                 results.isEmpty() shouldBe false

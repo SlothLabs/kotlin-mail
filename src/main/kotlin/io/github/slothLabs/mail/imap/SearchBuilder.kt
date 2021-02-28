@@ -80,7 +80,10 @@ class SearchBuilder {
 
     private val sortedBy = mutableListOf<Sort>()
 
-    internal var shouldSetSeenFlag = false
+    /**
+     * Whether search results should be marked as read.
+     */
+    var markAsRead = false
 
     /**
      * Creates an `Option` containing either `None` or the combined
@@ -974,13 +977,6 @@ class SearchBuilder {
 
         sortedBy.addAll(sortBuilder.build())
     }
-
-    /**
-     * Instructs that each search result should be marked as read.
-     *
-     * @param value whether search results should be marked as read.
-     */
-    fun markAsRead(value: Boolean) = value.let { shouldSetSeenFlag = it }
 
     /**
      * Adds the `SearchTerm` operand to this `SearchBuilder`.

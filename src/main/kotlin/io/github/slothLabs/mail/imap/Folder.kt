@@ -77,7 +77,7 @@ class Folder(private val javaMailFolder: IMAPFolder) {
         javaMailMessages?.let { javaMailFolder.fetch(it, preFetchInfo) }
         val messages = javaMailMessages?.map { Message(it as IMAPMessage) } ?: mutableListOf()
 
-        if (builder.shouldSetSeenFlag) {
+        if (builder.markAsRead) {
             javaMailMessages?.forEach {
                 javaMailFolder.setFlags(arrayOf(it), seenFlags.javaMailFlags, true)
             }
