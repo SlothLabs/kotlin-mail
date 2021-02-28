@@ -1296,7 +1296,7 @@ class SearchBuilderTest : AnnotationSpec() {
     @Test
     fun flagsMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
-        val flags = io.github.slothLabs.mail.imap.Flags(Flag.Draft, Flag.Recent)
+        val flags = Flags(Flag.Draft, Flag.Recent)
         val set = false
         val flagTerm = sb.flags(flags, set)
 
@@ -1434,5 +1434,23 @@ class SearchBuilderTest : AnnotationSpec() {
         val notOlderTermFromBuilder = andTerm.terms[1] as NotTerm
         val olderTermFromBuilder = notOlderTermFromBuilder.term as OlderTerm
         olderTermFromBuilder shouldBe olderTerm
+    }
+
+    @Test
+    fun markAsReadShouldProperlySetShouldSetSeenFlag() {
+        val sb1 = SearchBuilder()
+        with(sb1) {
+            markAsRead(true)
+        }
+        sb1.shouldSetSeenFlag shouldBe true
+
+        val sb2 = SearchBuilder()
+        with(sb2) {
+            markAsRead(false)
+        }
+        sb2.shouldSetSeenFlag shouldBe false
+
+        val sb3 = SearchBuilder()
+        sb3.shouldSetSeenFlag shouldBe false
     }
 }
