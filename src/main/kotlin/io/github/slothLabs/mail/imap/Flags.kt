@@ -1,25 +1,27 @@
 package io.github.slothLabs.mail.imap
 
-import javax.mail.Flags
+import javax.mail.Flags as JavaMailFlags
 
-enum class Flag(private val javaMailFlag: Flags.Flag) {
-    Answered(Flags.Flag.ANSWERED),
-    Deleted(Flags.Flag.DELETED),
-    Draft(Flags.Flag.DRAFT),
-    Flagged(Flags.Flag.FLAGGED),
-    Recent(Flags.Flag.RECENT),
-    Seen(Flags.Flag.SEEN),
-    User(Flags.Flag.USER);
-
-    internal fun toJavaMailFlag() = javaMailFlag
-
-    companion object {
-        fun fromJavaMailFlag(javaMailFlag: Flags.Flag): Flag = values().filter { it.toJavaMailFlag() == javaMailFlag }.first()
-    }
+enum class Flag(var javaMailFlag: JavaMailFlags.Flag) {
+    Answered(JavaMailFlags.Flag.ANSWERED),
+    Deleted(JavaMailFlags.Flag.DELETED),
+    Draft(JavaMailFlags.Flag.DRAFT),
+    Flagged(JavaMailFlags.Flag.FLAGGED),
+    Recent(JavaMailFlags.Flag.RECENT),
+    Seen(JavaMailFlags.Flag.SEEN),
+    User(JavaMailFlags.Flag.USER);
 }
 
-class Flags() {
-    private val flags = mutableSetOf<Flag>()
+class Flags(vararg flags: Flag) : HashSet<Flag>() {
+    private val flagItems = mutableSetOf<Flag>()
 
+    val javaMailFlags: JavaMailFlags
+        get() = flagItems.fold(JavaMailFlags()) { acc: JavaMailFlags, flag: Flag ->
+            acc.add(flag.javaMailFlag)
+            acc
+        }
 
+    init {
+        flags.forEach { flagItems.add(it) }
+    }
 }

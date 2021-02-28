@@ -3,11 +3,7 @@ package io.github.slothLabs.mail.imap
 import com.sun.mail.imap.ModifiedSinceTerm
 import com.sun.mail.imap.OlderTerm
 import com.sun.mail.imap.YoungerTerm
-import org.funktionale.option.Option
-import org.funktionale.option.Option.None
-import org.funktionale.option.Option.Some
 import java.util.Date
-import javax.mail.Flags
 import javax.mail.Message
 import javax.mail.internet.InternetAddress
 import javax.mail.internet.MimeMessage.RecipientType
@@ -84,6 +80,8 @@ class SearchBuilder {
 
     private val sortedBy = mutableListOf<Sort>()
 
+    internal var shouldSetSeenFlag = false
+
     /**
      * Creates an `Option` containing either `None` or the combined
      * `SearchTerm` instance that results from merging all of the terms
@@ -94,10 +92,12 @@ class SearchBuilder {
      *         was added, or `Some` containing an `AndTerm` built from merging all of
      *         the added search terms.
      */
-    fun build(): Option<SearchTerm> =
-        if (terms.isEmpty()) None
-        else if (terms.size == 1) Some(terms[0])
-        else Some(terms.reduce { first, second -> AndTerm(first, second) })
+    fun build(): SearchTerm? =
+        when (terms.size) {
+            0 -> null
+            1 -> terms[0]
+            else -> terms.reduce { first, second -> AndTerm(first, second) }
+        }
 
     /**
      * Whether or not sort terms have been applied to the search.
@@ -154,7 +154,8 @@ class SearchBuilder {
      *
      * @return a `RecipientTerm` based on the given `recipientType` and `address`.
      */
-    fun recipient(recipientType: Message.RecipientType, address: InternetAddress) = RecipientTerm(recipientType, address)
+    fun recipient(recipientType: Message.RecipientType, address: InternetAddress) =
+        RecipientTerm(recipientType, address)
 
     /**
      * Creates and returns a `RecipientTerm` with the specified `RecipientType` and string pattern.
@@ -172,7 +173,8 @@ class SearchBuilder {
      * @param recipientType the `RecipientType` for the generated term.
      * @param address the `InternetAddress` for the generated term.
      */
-    fun withRecipient(recipientType: Message.RecipientType, address: InternetAddress) = with(recipient(recipientType, address))
+    fun withRecipient(recipientType: Message.RecipientType, address: InternetAddress) =
+        with(recipient(recipientType, address))
 
     /**
      * Creates a `RecipientTerm` with the specified `RecipientType` and string pattern and stores it in this `SearchBuilder`.
@@ -506,7 +508,7 @@ class SearchBuilder {
      *
      * @return an `AndTerm` applied to the start and end values of the date range.
      */
-    fun receivedBetween(earliest: Date, latest: Date) = ReceivedDate between earliest .. latest
+    fun receivedBetween(earliest: Date, latest: Date) = ReceivedDate between earliest..latest
 
     /**
      * Creates an `AndTerm` for items with a received date greater than or equal to the starting value of the
@@ -665,7 +667,7 @@ class SearchBuilder {
      *
      * @return an `AndTerm` applied to the start and end values of the date range.
      */
-    fun sentBetween(earliest: Date, latest: Date) = SentDate between earliest .. latest
+    fun sentBetween(earliest: Date, latest: Date) = SentDate between earliest..latest
 
     /**
      * Creates an `AndTerm` for items with a sent date greater than or equal to the starting value of the
@@ -860,7 +862,7 @@ class SearchBuilder {
      *
      * @return an `AndTerm` applied to the start and end values of the size range.
      */
-    fun sizeBetween(smallest: Int, largest: Int) = Size between smallest .. largest
+    fun sizeBetween(smallest: Int, largest: Int) = Size between smallest..largest
 
     /**
      * Creates an `AndTerm` for items with a size greater than or equal to the start value of the size range, and less
@@ -890,7 +892,7 @@ class SearchBuilder {
      *
      * @return a `FlagTerm` for the given flags and set value.
      */
-    fun flags(flags: Flags, set: Boolean) = FlagTerm(flags, set)
+    fun flags(flags: Flags, set: Boolean) = FlagTerm(flags.javaMailFlags, set)
 
     /**
      * Creates a `FlagTerm` using the given flags and set value, and stores it within this `SearchBuilder`. For example,
@@ -963,7 +965,7 @@ class SearchBuilder {
     /**
      * Sorts the search results by the terms applied in the block.
      *
-     * @param block the block to use to initialize the [SortBuilder]
+     * @param block the block to use to initialize the [SortBuilder].
      */
     fun sortedBy(block: SortBuilder.() -> Unit) {
         val sortBuilder = SortBuilder()
@@ -972,6 +974,13 @@ class SearchBuilder {
 
         sortedBy.addAll(sortBuilder.build())
     }
+
+    /**
+     * Instructs that each search result should be marked as read.
+     *
+     * @param value whether search results should be marked as read.
+     */
+    fun markAsRead(value: Boolean) = value.let { shouldSetSeenFlag = it }
 
     /**
      * Adds the `SearchTerm` operand to this `SearchBuilder`.
@@ -983,4 +992,3 @@ class SearchBuilder {
      */
     operator fun SearchTerm.unaryMinus() = terms.add(!this)
 }
-

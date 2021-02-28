@@ -2,10 +2,8 @@ package io.github.slothLabs.mail.imap
 
 import com.sun.mail.imap.IMAPFolder
 import com.sun.mail.imap.IMAPMessage
-import org.funktionale.option.Option
-import org.funktionale.option.toOption
 import javax.mail.FetchProfile
-import javax.mail.Folder
+import javax.mail.Folder as JavaMailFolder
 
 /**
  * A statically-typed `enum` to wrap the JavaMail Folder constants.
@@ -14,27 +12,27 @@ enum class FolderModes(private val javaMailMode: Int) {
     /**
      * Indicates to open the folder in read-only mode.
      */
-    ReadOnly(Folder.READ_ONLY),
+    ReadOnly(JavaMailFolder.READ_ONLY),
 
     /**
      * Indicates to open the folder in read/write mode.
      */
-    ReadWrite(Folder.READ_WRITE);
+    ReadWrite(JavaMailFolder.READ_WRITE);
 
     internal fun toJavaMailMode() = javaMailMode
 }
 
 enum class FolderTypes(private val javaMailFolderType: Int) {
-    HoldsFolders(Folder.HOLDS_FOLDERS),
-    HoldsMessages(Folder.HOLDS_MESSAGES),
-    HoldsBoth(Folder.HOLDS_FOLDERS and Folder.HOLDS_MESSAGES);
+    HoldsFolders(JavaMailFolder.HOLDS_FOLDERS),
+    HoldsMessages(JavaMailFolder.HOLDS_MESSAGES),
+    HoldsBoth(JavaMailFolder.HOLDS_FOLDERS and JavaMailFolder.HOLDS_MESSAGES);
 
     internal fun toJavaMailFolderType() = javaMailFolderType
 
     companion object {
         fun fromJavaMailFolderType(javaMailFolderType: Int): FolderTypes {
-            val holdsFolders = javaMailFolderType and Folder.HOLDS_FOLDERS
-            val holdsMessages = javaMailFolderType and Folder.HOLDS_MESSAGES
+            val holdsFolders = javaMailFolderType and JavaMailFolder.HOLDS_FOLDERS
+            val holdsMessages = javaMailFolderType and JavaMailFolder.HOLDS_MESSAGES
 
             if ((holdsFolders != 0) && (holdsMessages != 0)) return HoldsBoth
             else if (holdsFolders != 0) return HoldsFolders
@@ -50,6 +48,8 @@ enum class FolderTypes(private val javaMailFolderType: Int) {
 class Folder(private val javaMailFolder: IMAPFolder) {
 
     private var preFetchInfo = FetchProfile()
+
+    private val seenFlags = Flags(Flag.Seen)
 
     /**
      * Search this folder using the [SearchBuilder] initialized within
@@ -69,16 +69,17 @@ class Folder(private val javaMailFolder: IMAPFolder) {
 
         val javaMailMessages = if (builder.hasSortTerms()) {
             val sortTerms = builder.getSortTerms().map { it.toSortTerm() }.toTypedArray()
-            searchTerm.map { javaMailFolder.getSortedMessages(sortTerms, it)}
+            searchTerm?.let { javaMailFolder.getSortedMessages(sortTerms, it) }
         } else {
-            searchTerm.map { javaMailFolder.search(it) }
+            searchTerm?.let { javaMailFolder.search(it) }
         }
 
-        javaMailMessages.map { javaMailFolder.fetch(it, preFetchInfo) }
-        val messages = mutableListOf<Message>()
-        javaMailMessages.map {
-            for (jmm in it) {
-                messages.add(Message(jmm as IMAPMessage))
+        javaMailMessages?.let { javaMailFolder.fetch(it, preFetchInfo) }
+        val messages = javaMailMessages?.map { Message(it as IMAPMessage) } ?: mutableListOf()
+
+        if (builder.shouldSetSeenFlag) {
+            javaMailMessages?.forEach {
+                javaMailFolder.setFlags(arrayOf(it), seenFlags.javaMailFlags, true)
             }
         }
 
@@ -153,14 +154,13 @@ class Folder(private val javaMailFolder: IMAPFolder) {
      * Operator to allow accessing messages in this folder via bracket syntax. The supplied
      * index is expected to be a valid message number within this folder.
      */
-    operator fun get(i: Int): Option<Message> = javaMailFolder[i];
+    operator fun get(i: Int): Message? = javaMailFolder[i]
 
     fun messagesIn(range: ClosedRange<Int>, prefetch: Boolean = true): List<Message> {
-        val jmmMessages = javaMailFolder.getMessages(range.start, range.endInclusive);
+        val jmmMessages = javaMailFolder.getMessages(range.start, range.endInclusive)
         if (prefetch) {
             javaMailFolder.fetch(jmmMessages, preFetchInfo)
         }
         return jmmMessages.map { Message(it as IMAPMessage) }
     }
 }
-

@@ -1,16 +1,15 @@
 package io.github.slothLabs.mail.imap
 
 import com.sun.mail.imap.IMAPFolder
-import java.io.Closeable
-import java.util.Properties
 import javax.mail.Session
 import javax.mail.Store
-import javax.mail.Message as MailMessage
+import java.io.Closeable
+import java.util.Properties
 
 /**
  * Class for performing basic IMAP access functionality.
  */
-class Imap internal constructor(private val store: Store): Closeable, AutoCloseable {
+class Imap internal constructor(private val store: Store) : Closeable, AutoCloseable {
 
     /**
      * Closes the session and disconnects from the IMAP server.
@@ -51,25 +50,36 @@ class Imap internal constructor(private val store: Store): Closeable, AutoClosea
  * Class for basic IMAP connectivity information.
  */
 data class ConnectionInformation(
-        /**
-         * The host to connect to.
-         */
-        val host: String,
+    /**
+     * The host to connect to.
+     */
+    val host: String,
 
-        /**
-         * The port to connect to.
-         */
-        val port: Int,
+    /**
+     * The port to connect to.
+     */
+    val port: Int,
 
-        /**
-         * The user name to connect with.
-         */
-        val user: String,
+    /**
+     * The user name to connect with.
+     */
+    val user: String,
 
-        /**
-         * The password to connect with.
-         */
-        val password: String)
+    /**
+     * The password to connect with.
+     */
+    val password: String,
+
+    /**
+     * The debug mode flag.
+     */
+    val debug: Boolean = false,
+
+    /**
+     * The ssl enabled flag.
+     */
+    val sslEnabled: Boolean = false
+)
 
 /**
  * Connects to an IMAP server using the specified connection information and properties, and performs the give action
@@ -91,21 +101,21 @@ data class ConnectionInformation(
  * @param port the port to connect to
  * @param user the user name to connect with
  * @param password the password to connect with
- * @param props the properties to pass to the JavaMail store
+ * @param properties the properties to pass to the JavaMail store
  * @param action the action to perform against the IMAP server.
  */
-fun imap(host: String, port: Int, user: String, password: String, props: Properties = Properties(), action: Imap.() -> Unit) {
-    val session = Session.getInstance(props)
-    val store = session.getStore("imap")
-    store.connect(
-            host,
-            port,
-            user,
-            password
-    )
-    Imap(store).use {
-        it.action()
-    }
+fun imap(
+    host: String,
+    port: Int,
+    user: String,
+    password: String,
+    debug: Boolean = false,
+    sslEnabled: Boolean = false,
+    properties: Properties = Properties(),
+    action: Imap.() -> Unit
+) {
+    val connectionInformation = ConnectionInformation(host, port, user, password, debug, sslEnabled)
+    imap(connectionInformation, properties, action)
 }
 
 /**
@@ -126,11 +136,13 @@ fun imap(host: String, port: Int, user: String, password: String, props: Propert
  * ```
  *
  * @param connectionInformation the [ConnectionInformation] to connect with
- * @param props the properties to pass to the JavaMail store
+ * @param properties the properties to pass to the JavaMail store
  * @param action the action to perform against the IMAP server.
  */
-fun imap(connectionInformation: ConnectionInformation, props: Properties = Properties(), action: Imap.() -> Unit) {
-    val session = Session.getInstance(props)
+fun imap(connectionInformation: ConnectionInformation, properties: Properties = Properties(), action: Imap.() -> Unit) {
+    properties.setPropertiesFrom(connectionInformation)
+    val session = Session.getInstance(properties)
+    session.debug = connectionInformation.debug
     val store = session.getStore("imap")
     store.connect(connectionInformation)
     Imap(store).use {
@@ -145,8 +157,12 @@ fun imap(connectionInformation: ConnectionInformation, props: Properties = Prope
  * @param connectionInformation the [ConnectionInformation] to connect with.
  */
 fun Store.connect(connectionInformation: ConnectionInformation) = this.connect(
-        connectionInformation.host,
-        connectionInformation.port,
-        connectionInformation.user,
-        connectionInformation.password
+    connectionInformation.host,
+    connectionInformation.port,
+    connectionInformation.user,
+    connectionInformation.password
 )
+
+private fun Properties.setPropertiesFrom(connectionInformation: ConnectionInformation) {
+    this["mail.imap.ssl.enable"] = connectionInformation.sslEnabled
+}

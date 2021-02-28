@@ -1,38 +1,42 @@
 package io.github.slothLabs.mail.imap
 
-import com.icegreen.greenmail.junit.GreenMailRule
+import com.icegreen.greenmail.util.GreenMail
 import com.icegreen.greenmail.util.GreenMailUtil
 import com.icegreen.greenmail.util.ServerSetupTest
 import com.sun.mail.imap.IMAPFolder.FetchProfileItem
 import com.sun.mail.imap.SortTerm
-import org.funktionale.option.Option
-import org.junit.After
-import org.junit.Assert.*
-import org.junit.Before
-import org.junit.Rule
-import org.junit.Test
-import java.util.Date
-import io.github.slothLabs.mail.imap.Sort.*
+import io.github.slothLabs.mail.imap.Sort.From
+import io.github.slothLabs.mail.imap.Sort.Subject
+import io.github.slothLabs.mail.imap.Sort.To
+import io.kotest.core.spec.Spec
+import io.kotest.core.spec.style.AnnotationSpec
+import io.kotest.core.test.TestCase
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
+import java.time.temporal.ChronoUnit
 
-class ImapConnectionTest {
-    @get:Rule
-    val greenMail = GreenMailRule(ServerSetupTest.SMTP_IMAP)
+class ImapConnectionTest : AnnotationSpec() {
 
-    val host: String
+    private val greenMail = GreenMail(ServerSetupTest.SMTP_IMAP)
+
+    private val host: String
         get() = greenMail.imap.bindTo
 
-    val port: Int
+    private val port: Int
         get() = greenMail.imap.port
 
-    @Before fun setup() {
-        greenMail.start()
+    override fun beforeTest(testCase: TestCase) {
+        super.beforeTest(testCase)
+        greenMail.reset()
     }
 
-    @After fun tearDown() {
+    override fun afterSpec(spec: Spec) {
+        super.afterSpec(spec)
         greenMail.stop()
     }
 
-    @Test fun shouldHandlePlainTextBody() {
+    @Test
+    fun shouldHandlePlainTextBody() {
         val emailAddress = "test@localhost.com"
         val fromAddress = "from@localhost.com"
         val password = "password"
@@ -44,24 +48,24 @@ class ImapConnectionTest {
         GreenMailUtil.sendTextEmailTest(emailAddress, fromAddress, subject, testBodyText)
 
         var processed = false
-        imap(host, port, user = emailAddress, password = password) {
+        imap(host, port, emailAddress, password) {
             folder("INBOX", FolderModes.ReadOnly) {
                 val msg = this[1]
-                assertTrue(msg is Option.Some)
+                msg.shouldNotBeNull()
                 msg {
-                    assertEquals(testBodyText, bodyText)
-                    assertNotNull(uid)
-                    assertFalse(headers.isEmpty())
+                    testBodyText shouldBe bodyText
+                    headers.isEmpty() shouldBe false
 
                     processed = true
                 }
             }
         }
 
-        assertTrue(processed)
+        processed shouldBe true
     }
 
-    @Test fun shouldHandlePlainTextBodyWithConnectionInformationObject() {
+    @Test
+    fun shouldHandlePlainTextBodyWithConnectionInformationObject() {
         val emailAddress = "test@localhost.com"
         val fromAddress = "from@localhost.com"
         val password = "password"
@@ -78,21 +82,21 @@ class ImapConnectionTest {
         imap(conInfo) {
             folder("INBOX", FolderModes.ReadOnly) {
                 val msg = this[1]
-                assertTrue(msg is Option.Some)
+                msg.shouldNotBeNull()
                 msg {
-                    assertEquals(testBodyText, bodyText)
-                    assertNotNull(uid)
-                    assertFalse(headers.isEmpty())
+                    testBodyText shouldBe bodyText
+                    headers.isEmpty() shouldBe false
 
                     processed = true
                 }
             }
         }
 
-        assertTrue(processed)
+        processed shouldBe true
     }
 
-    @Test fun searchStuff() {
+    @Test
+    fun searchStuff() {
         val emailAddress = "test@localhost.com"
         val fromAddress = "from@localhost.com"
         val password = "password"
@@ -102,6 +106,7 @@ class ImapConnectionTest {
         greenMail.setUser(emailAddress, password)
 
         GreenMailUtil.sendTextEmailTest(emailAddress, fromAddress, subject, testBodyText)
+        val mailSentDatePlusOneHour = greenMail.firstReceivedMailSentDatePlusOffset(1, ChronoUnit.HOURS)
 
         var processed = false
 
@@ -112,27 +117,26 @@ class ImapConnectionTest {
                 preFetchBy(FetchProfileItem.MESSAGE)
                 val results = search {
                     withFrom(fromAddress)
-                    withSentOnOrBefore(Date())
+                    withSentOnOrBefore(mailSentDatePlusOneHour)
                 }
                 msgList.addAll(results)
-
 
                 processed = true
             }
         }
 
-        assertTrue(msgList.isNotEmpty())
+        msgList.isNotEmpty() shouldBe true
 
         val first = msgList[0]
-        assertEquals(fromAddress, first.from)
-        assertEquals(testBodyText.trim(), first.bodyText.trim())
-        assertNotNull(first.uid)
-        assertFalse(first.headers.isEmpty())
+        fromAddress shouldBe first.from
+        testBodyText.trim() shouldBe first.bodyText.trim()
+        first.headers.isEmpty() shouldBe false
 
-        assertTrue(processed)
+        processed shouldBe true
     }
 
-    @Test fun otherSearchStuff() {
+    @Test
+    fun otherSearchStuff() {
         val emailAddress = "test@localhost.com"
         val fromAddress = "from@localhost.com"
         val password = "password"
@@ -142,6 +146,7 @@ class ImapConnectionTest {
         greenMail.setUser(emailAddress, password)
 
         GreenMailUtil.sendTextEmailTest(emailAddress, fromAddress, subject, testBodyText)
+        val mailSentDatePlusOneHour = greenMail.firstReceivedMailSentDatePlusOffset(1, ChronoUnit.HOURS)
 
         var processed = false
 
@@ -155,27 +160,26 @@ class ImapConnectionTest {
                     +to(emailAddress)
                     -subject("Testing")
 
-                    +sentOnOrBefore(Date())
+                    +sentOnOrBefore(mailSentDatePlusOneHour)
                 }
                 msgList.addAll(results)
-
 
                 processed = true
             }
         }
 
-        assertTrue(msgList.isNotEmpty())
+        msgList.isNotEmpty() shouldBe true
 
         val first = msgList[0]
-        assertEquals(fromAddress, first.from)
-        assertEquals(testBodyText.trim(), first.bodyText.trim())
-        assertNotNull(first.uid)
-        assertFalse(first.headers.isEmpty())
+        fromAddress shouldBe first.from
+        testBodyText.trim() shouldBe first.bodyText.trim()
+        first.headers.isEmpty() shouldBe false
 
-        assertTrue(processed)
+        processed shouldBe true
     }
 
-    @Test fun searchStuffWithSorting() {
+    @Test
+    fun searchStuffWithSorting() {
         val emailAddress = "test@localhost.com"
         val fromAddress = "from@localhost.com"
         val password = "password"
@@ -185,6 +189,7 @@ class ImapConnectionTest {
         greenMail.setUser(emailAddress, password)
 
         GreenMailUtil.sendTextEmailTest(emailAddress, fromAddress, subject, testBodyText)
+        val mailSentDatePlusOneHour = greenMail.firstReceivedMailSentDatePlusOffset(1, ChronoUnit.HOURS)
 
         var processed = false
 
@@ -198,7 +203,7 @@ class ImapConnectionTest {
                     +to(emailAddress)
                     -subject("Testing")
 
-                    +sentOnOrBefore(Date())
+                    +sentOnOrBefore(mailSentDatePlusOneHour)
 
                     sortedBy {
                         +From
@@ -214,18 +219,18 @@ class ImapConnectionTest {
             }
         }
 
-        assertTrue(msgList.isNotEmpty())
+        msgList.isNotEmpty() shouldBe true
 
         val first = msgList[0]
-        assertEquals(fromAddress, first.from)
-        assertEquals(testBodyText.trim(), first.bodyText.trim())
-        assertNotNull(first.uid)
-        assertFalse(first.headers.isEmpty())
+        fromAddress shouldBe first.from
+        testBodyText.trim() shouldBe first.bodyText.trim()
+        first.headers.isEmpty() shouldBe false
 
-        assertTrue(processed)
+        processed shouldBe true
     }
 
-    @Test fun sortingNoSearch() {
+    @Test
+    fun sortingNoSearch() {
         val emailAddress = "test@localhost.com"
         val fromAddress = "from@localhost.com"
         val password = "password"
@@ -249,7 +254,7 @@ class ImapConnectionTest {
                     -SortTerm.SIZE
                     -Subject
                     +SortTerm.ARRIVAL
-                    -Sort.fromSortTerm(SortTerm.CC).get()
+                    -Sort.fromSortTerm(SortTerm.CC)!!
                 }
 
                 msgList.addAll(results)
@@ -258,14 +263,13 @@ class ImapConnectionTest {
             }
         }
 
-        assertTrue(msgList.isNotEmpty())
+        msgList.isNotEmpty() shouldBe true
 
         val first = msgList[0]
-        assertEquals(fromAddress, first.from)
-        assertEquals(testBodyText.trim(), first.bodyText.trim())
-        assertNotNull(first.uid)
-        assertFalse(first.headers.isEmpty())
+        fromAddress shouldBe first.from
+        testBodyText.trim() shouldBe first.bodyText.trim()
+        first.headers.isEmpty() shouldBe false
 
-        assertTrue(processed)
+        processed shouldBe true
     }
 }

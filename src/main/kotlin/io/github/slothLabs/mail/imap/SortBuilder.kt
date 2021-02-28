@@ -1,7 +1,6 @@
 package io.github.slothLabs.mail.imap
 
 import com.sun.mail.imap.SortTerm
-import org.funktionale.option.toOption
 
 /**
  * Builder class to make sorting messages a little easier to work with.
@@ -15,7 +14,7 @@ class SortBuilder {
      *
      * @return a `List` of [Sort] instances built with this builder.
      */
-    fun build() : List<Sort> = sortTerms
+    fun build(): List<Sort> = sortTerms
 
     /**
      * Adds the specified [Sort] term to this builder.
@@ -29,7 +28,7 @@ class SortBuilder {
      *
      * @param sort the `SortTerm` to add.
      */
-    fun add(sort: SortTerm) = Sort.fromSortTerm(sort).map { add(it) }
+    fun add(sort: SortTerm) = Sort.fromSortTerm(sort)?.let { add(it) }
 
     /**
      * Shorthand to add a `SortTerm` to this builder.
@@ -123,6 +122,6 @@ enum class Sort(private val javaMailSortTerm: SortTerm) {
          *
          * @return an `Option<Sort>` that matches the specified sort term.
          */
-        fun fromSortTerm(javaMailSortTerm: SortTerm) = Sort.values().find { it.javaMailSortTerm == javaMailSortTerm }.toOption()
+        fun fromSortTerm(javaMailSortTerm: SortTerm): Sort? = values().find { it.javaMailSortTerm == javaMailSortTerm }
     }
 }
