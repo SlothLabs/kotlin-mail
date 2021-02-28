@@ -30,7 +30,7 @@ sealed class Result<T> {
     }
 
     open class Failure<T>(private val message: String) : Result<T>() {
-        override fun ifPresent(action: T.() -> Unit) { }
+        override fun ifPresent(action: T.() -> Unit) {}
 
         override val success: Boolean
             get() = false

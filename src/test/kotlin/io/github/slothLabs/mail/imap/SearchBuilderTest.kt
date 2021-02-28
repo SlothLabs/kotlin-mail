@@ -3,21 +3,19 @@ package io.github.slothLabs.mail.imap
 import com.sun.mail.imap.ModifiedSinceTerm
 import com.sun.mail.imap.OlderTerm
 import com.sun.mail.imap.YoungerTerm
-import io.kotlintest.specs.WordSpec
-import io.kotlintest.matchers.*
-
-import org.funktionale.option.Option.*
-import org.junit.Assert.*
-import org.junit.Test
+import io.kotest.core.spec.style.AnnotationSpec
+import io.kotest.core.test.TestCase
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
+import org.junit.jupiter.api.Assertions.assertNotSame
 import java.util.Date
-import javax.mail.Flags
 import javax.mail.internet.InternetAddress
 import javax.mail.internet.MimeMessage
 import javax.mail.search.AndTerm
 import javax.mail.search.BodyTerm
 import javax.mail.search.ComparisonTerm
 import javax.mail.search.FlagTerm
-import javax.mail.search.FromStringTerm
 import javax.mail.search.FromTerm
 import javax.mail.search.HeaderTerm
 import javax.mail.search.MessageIDTerm
@@ -31,291 +29,293 @@ import javax.mail.search.SentDateTerm
 import javax.mail.search.SizeTerm
 import javax.mail.search.SubjectTerm
 
+class SearchBuilderTest : AnnotationSpec() {
 
-class BasicSearchBuilderTest : WordSpec() {
+    private var sb = SearchBuilder()
 
-    var sb: SearchBuilder = SearchBuilder()
-
-    override fun beforeEach() {
+    override fun beforeTest(testCase: TestCase) {
         sb = SearchBuilder()
     }
 
-    init {
-        "SearchBuilder.build" should {
-            "return None for new SearchBuilder" {
-                val res = sb.build()
-
-                res should be a None::class
-            }
-
-            "return Some if a term has been added to the builder" {
-                sb.withFrom("test@drive.com")
-
-                val res = sb.build()
-                res should be a Some::class
-            }
-        }
-
-        "from" should {
-            "construct appropriate InternetAddress instance" {
-                val address = InternetAddress("test@drive.com")
-                val fromInternetAddress = sb.from(address)
-
-                fromInternetAddress should be a FromTerm::class
-                fromInternetAddress.address shouldBe address
-            }
-
-            "construct appropriate String instance" {
-                val str = "another@example.com"
-                val fromString = sb.from(str)
-
-                fromString should be a FromStringTerm::class
-                fromString.pattern shouldBe str
-            }
-        }
-
-        "withFrom" should {
-            "properly fill with InternetAddress based term" {
-                val address = InternetAddress("test@drive.com")
-                sb.withFrom(address)
-                val terms = sb.build()
-                terms should be a Some::class
-                val fromTerm: FromTerm = terms.get() as FromTerm
-                fromTerm.address shouldBe address
-            }
-
-            "properly fill with String based term" {
-                val str = "another@example.com"
-                sb.withFrom(str)
-                val terms = sb.build()
-                terms should be a Some::class
-
-                val fromStringTerm: FromStringTerm = terms.get() as FromStringTerm
-                fromStringTerm.pattern shouldBe str
-            }
-        }
-
-        "recipient" should {
-            "construct appropriate InternetAddress instance" {
-                val recipientType = MimeMessage.RecipientType.TO
-
-                val address = InternetAddress("test@drive.com")
-                val recipientInternetAddress = sb.recipient(recipientType, address)
-
-                recipientInternetAddress should be a RecipientTerm::class
-                recipientInternetAddress.recipientType shouldBe recipientType
-                recipientInternetAddress.address shouldBe address
-            }
-
-            "construct appropriate String based term" {
-                val recipientType = MimeMessage.RecipientType.TO
-
-                val str = "another@example.com"
-                val recipientString = sb.recipient(recipientType, str)
-
-                recipientString should be a RecipientStringTerm::class
-                recipientString.recipientType shouldBe recipientType
-                recipientString.pattern shouldBe str
-            }
-        }
+    @Test
+    fun searchBuilderBuildWithoutTermsShouldReturnNull() {
+        val res = sb.build()
+        res.shouldBeNull()
     }
 
-    @Test fun withRecipientMethodsShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun searchBuilderBuildWithTermsShouldReturnNotNull() {
+        sb.withFrom("test@drive.com")
+        val res = sb.build()
+        res.shouldNotBeNull()
+    }
+
+    @Test
+    fun fromShouldConstructAppropriateInternetAddressInstance() {
+        val address = InternetAddress("test@drive.com")
+        val fromInternetAddress = sb.from(address)
+
+        fromInternetAddress.address shouldBe address
+    }
+
+    @Test
+    fun fromShouldConstructAppropriateStringInstance() {
+        val str = "another@example.com"
+        val fromString = sb.from(str)
+
+        fromString.pattern shouldBe str
+    }
+
+    @Test
+    fun withFromShouldProperlyFillWithInternetAddressBasedTerm() {
+        val address = InternetAddress("test@drive.com")
+        sb.withFrom(address)
+
+        val terms = sb.build()
+        terms.shouldNotBeNull()
+
+        val fromTerm = terms as FromTerm
+        fromTerm.address shouldBe address
+    }
+
+    @Test
+    fun recipientShouldConstructAppropriateInternetAddressInstance() {
+        val recipientType = MimeMessage.RecipientType.TO
+
+        val address = InternetAddress("test@drive.com")
+        val recipientInternetAddress = sb.recipient(recipientType, address)
+
+        recipientInternetAddress.recipientType shouldBe recipientType
+        recipientInternetAddress.address shouldBe address
+    }
+
+    @Test
+    fun recipientShouldConstructAppropriateStringBasedTerm() {
+        val recipientType = MimeMessage.RecipientType.TO
+
+        val str = "another@example.com"
+        val recipientString = sb.recipient(recipientType, str)
+
+        recipientString.recipientType shouldBe recipientType
+        recipientString.pattern shouldBe str
+    }
+
+    @Test
+    fun withRecipientMethodsShouldProperlyFillSearchBuilderTerms() {
         val sb1 = SearchBuilder()
         val recipientType = MimeMessage.RecipientType.TO
 
         val address = InternetAddress("test@drive.com")
         sb1.withRecipient(recipientType, address)
         val terms1 = sb1.build()
-        assertTrue(terms1 is Some)
-        val recipientInternetAddress: RecipientTerm = terms1.get() as RecipientTerm
-        assertEquals(recipientInternetAddress.recipientType, recipientType)
-        assertEquals(recipientInternetAddress.address, address)
+        terms1.shouldNotBeNull()
+
+        val recipientInternetAddress = terms1 as RecipientTerm
+        recipientInternetAddress.recipientType shouldBe recipientType
+        recipientInternetAddress.address shouldBe address
 
         val sb2 = SearchBuilder()
         val str = "another@example.com"
         sb2.withRecipient(recipientType, str)
         val terms2 = sb2.build()
-        assertTrue(terms2 is Some)
-        val recipientString: RecipientStringTerm = terms2.get() as RecipientStringTerm
-        assertEquals(recipientString.recipientType, recipientType)
-        assertEquals(recipientString.pattern, str)
+        terms2.shouldNotBeNull()
+
+        val recipientString = terms2 as RecipientStringTerm
+        recipientString.recipientType shouldBe recipientType
+        recipientString.pattern shouldBe str
     }
 
-    @Test fun toMethodsShouldConstructAppropriateSearchTerms() {
+    @Test
+    fun toMethodsShouldConstructAppropriateSearchTerms() {
         val sb = SearchBuilder()
         val expRecipientType = MimeMessage.RecipientType.TO
 
         val address = InternetAddress("test@drive.com")
         val recipientInternetAddress = sb.to(address)
-        assertTrue(recipientInternetAddress is RecipientTerm)
-        assertEquals(recipientInternetAddress.recipientType, expRecipientType)
-        assertEquals(recipientInternetAddress.address, address)
+
+        recipientInternetAddress.recipientType shouldBe expRecipientType
+        recipientInternetAddress.address shouldBe address
 
         val str = "another@example.com"
         val recipientString = sb.to(str)
-        assertTrue(recipientString is RecipientStringTerm)
-        assertEquals(recipientString.recipientType, expRecipientType)
-        assertEquals(recipientString.pattern, str)
+
+        recipientString.recipientType shouldBe expRecipientType
+        recipientString.pattern shouldBe str
     }
 
-    @Test fun withToMethodsShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withToMethodsShouldProperlyFillSearchBuilderTerms() {
         val sb1 = SearchBuilder()
         val expRecipientType = MimeMessage.RecipientType.TO
 
         val address = InternetAddress("test@drive.com")
         sb1.withTo(address)
         val terms1 = sb1.build()
-        assertTrue(terms1 is Some)
-        val recipientInternetAddress: RecipientTerm = terms1.get() as RecipientTerm
-        assertEquals(recipientInternetAddress.recipientType, expRecipientType)
-        assertEquals(recipientInternetAddress.address, address)
+        terms1.shouldNotBeNull()
+
+        val recipientInternetAddress = terms1 as RecipientTerm
+        recipientInternetAddress.recipientType shouldBe expRecipientType
+        recipientInternetAddress.address shouldBe address
 
         val sb2 = SearchBuilder()
         val str = "another@example.com"
         sb2.withTo(str)
         val terms2 = sb2.build()
-        assertTrue(terms2 is Some)
-        val recipientString: RecipientStringTerm = terms2.get() as RecipientStringTerm
-        assertEquals(recipientString.recipientType, expRecipientType)
-        assertEquals(recipientString.pattern, str)
+        terms2.shouldNotBeNull()
+
+        val recipientString = terms2 as RecipientStringTerm
+        recipientString.recipientType shouldBe expRecipientType
+        recipientString.pattern shouldBe str
     }
 
-    @Test fun ccMethodsShouldConstructAppropriateSearchTerms() {
+    @Test
+    fun ccMethodsShouldConstructAppropriateSearchTerms() {
         val sb = SearchBuilder()
         val expRecipientType = MimeMessage.RecipientType.CC
 
         val address = InternetAddress("test@drive.com")
         val recipientInternetAddress = sb.cc(address)
-        assertTrue(recipientInternetAddress is RecipientTerm)
-        assertEquals(recipientInternetAddress.recipientType, expRecipientType)
-        assertEquals(recipientInternetAddress.address, address)
+
+        recipientInternetAddress.recipientType shouldBe expRecipientType
+        recipientInternetAddress.address shouldBe address
 
         val str = "another@example.com"
         val recipientString = sb.cc(str)
-        assertTrue(recipientString is RecipientStringTerm)
-        assertEquals(recipientString.recipientType, expRecipientType)
-        assertEquals(recipientString.pattern, str)
+
+        recipientString.recipientType shouldBe expRecipientType
+        recipientString.pattern shouldBe str
     }
 
-    @Test fun withCCMethodsShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withCCMethodsShouldProperlyFillSearchBuilderTerms() {
         val sb1 = SearchBuilder()
         val expRecipientType = MimeMessage.RecipientType.CC
 
         val address = InternetAddress("test@drive.com")
         sb1.withCC(address)
         val terms1 = sb1.build()
-        assertTrue(terms1 is Some)
-        val recipientInternetAddress: RecipientTerm = terms1.get() as RecipientTerm
-        assertEquals(recipientInternetAddress.recipientType, expRecipientType)
-        assertEquals(recipientInternetAddress.address, address)
+        terms1.shouldNotBeNull()
+
+        val recipientInternetAddress = terms1 as RecipientTerm
+        recipientInternetAddress.recipientType shouldBe expRecipientType
+        recipientInternetAddress.address shouldBe address
 
         val sb2 = SearchBuilder()
         val str = "another@example.com"
         sb2.withCC(str)
         val terms2 = sb2.build()
-        assertTrue(terms2 is Some)
-        val recipientString: RecipientStringTerm = terms2.get() as RecipientStringTerm
-        assertEquals(recipientString.recipientType, expRecipientType)
-        assertEquals(recipientString.pattern, str)
+        terms2.shouldNotBeNull()
+
+        val recipientString = terms2 as RecipientStringTerm
+        recipientString.recipientType shouldBe expRecipientType
+        recipientString.pattern shouldBe str
     }
 
-    @Test fun bccMethodsShouldConstructAppropriateSearchTerms() {
+    @Test
+    fun bccMethodsShouldConstructAppropriateSearchTerms() {
         val sb = SearchBuilder()
         val expRecipientType = MimeMessage.RecipientType.BCC
 
         val address = InternetAddress("test@drive.com")
         val recipientInternetAddress = sb.bcc(address)
-        assertTrue(recipientInternetAddress is RecipientTerm)
-        assertEquals(recipientInternetAddress.recipientType, expRecipientType)
-        assertEquals(recipientInternetAddress.address, address)
+
+        recipientInternetAddress.recipientType shouldBe expRecipientType
+        recipientInternetAddress.address shouldBe address
 
         val str = "another@example.com"
         val recipientString = sb.bcc(str)
-        assertTrue(recipientString is RecipientStringTerm)
-        assertEquals(recipientString.recipientType, expRecipientType)
-        assertEquals(recipientString.pattern, str)
+
+        recipientString.recipientType shouldBe expRecipientType
+        recipientString.pattern shouldBe str
     }
 
-    @Test fun withBCCMethodsShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withBCCMethodsShouldProperlyFillSearchBuilderTerms() {
         val sb1 = SearchBuilder()
         val expRecipientType = MimeMessage.RecipientType.BCC
 
         val address = InternetAddress("test@drive.com")
         sb1.withBCC(address)
         val terms1 = sb1.build()
-        assertTrue(terms1 is Some)
-        val recipientInternetAddress: RecipientTerm = terms1.get() as RecipientTerm
-        assertEquals(recipientInternetAddress.recipientType, expRecipientType)
-        assertEquals(recipientInternetAddress.address, address)
+        terms1.shouldNotBeNull()
+
+        val recipientInternetAddress = terms1 as RecipientTerm
+        recipientInternetAddress.recipientType shouldBe expRecipientType
+        recipientInternetAddress.address shouldBe address
 
         val sb2 = SearchBuilder()
         val str = "another@example.com"
         sb2.withBCC(str)
         val terms2 = sb2.build()
-        assertTrue(terms2 is Some)
-        val recipientString: RecipientStringTerm = terms2.get() as RecipientStringTerm
-        assertEquals(recipientString.recipientType, expRecipientType)
-        assertEquals(recipientString.pattern, str)
+        terms1.shouldNotBeNull()
+
+        val recipientString = terms2 as RecipientStringTerm
+        recipientString.recipientType shouldBe expRecipientType
+        recipientString.pattern shouldBe str
     }
 
-    @Test fun subjectMethodShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun subjectMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val subject = "Test Subject"
         val subjectTerm = sb.subject(subject)
 
-        assertTrue(subjectTerm is SubjectTerm)
-        assertEquals(subjectTerm.pattern, subject)
+        subjectTerm.pattern shouldBe subject
     }
 
-    @Test fun withSubjectMethodShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withSubjectMethodShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val subject = "Test Subject"
         sb.withSubject(subject)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val subjectTerm: SubjectTerm = terms.get() as SubjectTerm
-        assertEquals(subjectTerm.pattern, subject)
+        terms.shouldNotBeNull()
+
+        val subjectTerm = terms as SubjectTerm
+        subjectTerm.pattern shouldBe subject
     }
 
-    @Test fun bodyMethodShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun bodyMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val body = "Test Body"
         val bodyTerm = sb.body(body)
 
-        assertTrue(bodyTerm is BodyTerm)
-        assertEquals(bodyTerm.pattern, body)
+        bodyTerm.pattern shouldBe body
     }
 
-    @Test fun withBodyMethodShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withBodyMethodShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val body = "Test Body"
         sb.withBody(body)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val bodyTerm: BodyTerm = terms.get() as BodyTerm
-        assertEquals(bodyTerm.pattern, body)
+        terms.shouldNotBeNull()
+
+        val bodyTerm = terms as BodyTerm
+        bodyTerm.pattern shouldBe body
     }
 
-    @Test fun headerMethodShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun headerMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val headerName = "TheHeader"
         val headerValue = "Header Value"
         val headerTerm = sb.header(headerName, headerValue)
 
-        assertTrue(headerTerm is HeaderTerm)
-        assertEquals(headerTerm.headerName, headerName)
-        assertEquals(headerTerm.pattern, headerValue)
+        headerTerm.headerName shouldBe headerName
+        headerTerm.pattern shouldBe headerValue
     }
 
-    @Test fun withHeaderMethodShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withHeaderMethodShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val headerName = "TheHeader"
@@ -323,28 +323,27 @@ class BasicSearchBuilderTest : WordSpec() {
         sb.withHeader(headerName, headerValue)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val headerTerm: HeaderTerm = terms.get() as HeaderTerm
-        assertEquals(headerTerm.headerName, headerName)
-        assertEquals(headerTerm.pattern, headerValue)
+        terms.shouldNotBeNull()
+
+        val headerTerm = terms as HeaderTerm
+        headerTerm.headerName shouldBe headerName
+        headerTerm.pattern shouldBe headerValue
     }
 
-    @Test fun orMethodShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun orMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val firstFrom = sb.from("test@drive.com")
         val secondFrom = sb.from("another@example.com")
-        val orTerm = sb.or(firstFrom, secondFrom)
+        val orTerm = sb.or(firstFrom, secondFrom) as OrTerm
 
-        assertTrue(orTerm is OrTerm)
-        with (orTerm as OrTerm) {
-            assertEquals(orTerm.terms[0], firstFrom)
-            assertEquals(orTerm.terms[1], secondFrom)
-        }
-
+        orTerm.terms[0] shouldBe firstFrom
+        orTerm.terms[1] shouldBe secondFrom
     }
 
-    @Test fun withOrMethodShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withOrMethodShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val firstFrom = sb.from("test@drive.com")
@@ -352,28 +351,29 @@ class BasicSearchBuilderTest : WordSpec() {
         sb.withOr(firstFrom, secondFrom)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val orTerm: OrTerm = terms.get() as OrTerm
+        terms.shouldNotBeNull()
 
-        assertTrue(orTerm is OrTerm)
-        assertEquals(orTerm.terms[0], firstFrom)
-        assertEquals(orTerm.terms[1], secondFrom)
+        val orTerm = terms as OrTerm
+
+        orTerm.terms[0] shouldBe firstFrom
+        orTerm.terms[1] shouldBe secondFrom
     }
 
-    @Test fun andMethodShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun andMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val firstFrom = sb.from("test@drive.com")
         val secondFrom = sb.from("another@example.com")
         val andTerm = sb.and(firstFrom, secondFrom)
 
-        assertTrue(andTerm is AndTerm)
-        assertEquals(andTerm.terms[0], firstFrom)
-        assertEquals(andTerm.terms[1], secondFrom)
+        andTerm.terms[0] shouldBe firstFrom
+        andTerm.terms[1] shouldBe secondFrom
 
     }
 
-    @Test fun withAndMethodShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withAndMethodShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val firstFrom = sb.from("test@drive.com")
@@ -381,28 +381,30 @@ class BasicSearchBuilderTest : WordSpec() {
         sb.withAnd(firstFrom, secondFrom)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val andTerm: AndTerm = terms.get() as AndTerm
+        terms.shouldNotBeNull()
 
-        assertTrue(andTerm is AndTerm)
-        assertEquals(andTerm.terms[0], firstFrom)
-        assertEquals(andTerm.terms[1], secondFrom)
+        val andTerm = terms as AndTerm
+
+
+        andTerm.terms[0] shouldBe firstFrom
+        andTerm.terms[1] shouldBe secondFrom
     }
 
-    @Test fun receivedMethodShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun receivedMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val compTerm = ComparisonTerm.GE
         val date = Date()
         val receivedTerm = sb.received(compTerm, date)
 
-        assertTrue(receivedTerm is ReceivedDateTerm)
-        assertEquals(receivedTerm.comparison, compTerm)
-        assertEquals(receivedTerm.date, date)
+        receivedTerm.comparison shouldBe compTerm
+        receivedTerm.date shouldBe date
 
     }
 
-    @Test fun withReceivedMethodShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withReceivedMethodShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val compTerm = ComparisonTerm.GE
@@ -410,27 +412,28 @@ class BasicSearchBuilderTest : WordSpec() {
         sb.withReceived(compTerm, date)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val receivedTerm: ReceivedDateTerm = terms.get() as ReceivedDateTerm
+        terms.shouldNotBeNull()
 
-        assertTrue(receivedTerm is ReceivedDateTerm)
-        assertEquals(receivedTerm.comparison, compTerm)
-        assertEquals(receivedTerm.date, date)
+        val receivedTerm = terms as ReceivedDateTerm
+
+        receivedTerm.comparison shouldBe compTerm
+        receivedTerm.date shouldBe date
     }
 
-    @Test fun receivedOnMethodShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun receivedOnMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.EQ
         val date = Date()
         val receivedTerm = sb.receivedOn(date)
 
-        assertTrue(receivedTerm is ReceivedDateTerm)
-        assertEquals(receivedTerm.comparison, expCompTerm)
-        assertEquals(receivedTerm.date, date)
+        receivedTerm.comparison shouldBe expCompTerm
+        receivedTerm.date shouldBe date
     }
 
-    @Test fun withReceivedOnMethodShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withReceivedOnMethodShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.EQ
@@ -438,27 +441,28 @@ class BasicSearchBuilderTest : WordSpec() {
         sb.withReceivedOn(date)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val receivedTerm: ReceivedDateTerm = terms.get() as ReceivedDateTerm
+        terms.shouldNotBeNull()
 
-        assertTrue(receivedTerm is ReceivedDateTerm)
-        assertEquals(receivedTerm.comparison, expCompTerm)
-        assertEquals(receivedTerm.date, date)
+        val receivedTerm = terms as ReceivedDateTerm
+
+        receivedTerm.comparison shouldBe expCompTerm
+        receivedTerm.date shouldBe date
     }
 
-    @Test fun receivedOnOrAfterMethodShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun receivedOnOrAfterMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.GE
         val date = Date()
         val receivedTerm = sb.receivedOnOrAfter(date)
 
-        assertTrue(receivedTerm is ReceivedDateTerm)
-        assertEquals(receivedTerm.comparison, expCompTerm)
-        assertEquals(receivedTerm.date, date)
+        receivedTerm.comparison shouldBe expCompTerm
+        receivedTerm.date shouldBe date
     }
 
-    @Test fun withReceivedOnOrAfterMethodShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withReceivedOnOrAfterMethodShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.GE
@@ -466,27 +470,28 @@ class BasicSearchBuilderTest : WordSpec() {
         sb.withReceivedOnOrAfter(date)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val receivedTerm: ReceivedDateTerm = terms.get() as ReceivedDateTerm
+        terms.shouldNotBeNull()
 
-        assertTrue(receivedTerm is ReceivedDateTerm)
-        assertEquals(receivedTerm.comparison, expCompTerm)
-        assertEquals(receivedTerm.date, date)
+        val receivedTerm = terms as ReceivedDateTerm
+
+        receivedTerm.comparison shouldBe expCompTerm
+        receivedTerm.date shouldBe date
     }
 
-    @Test fun receivedAfterMethodShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun receivedAfterMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.GT
         val date = Date()
         val receivedTerm = sb.receivedAfter(date)
 
-        assertTrue(receivedTerm is ReceivedDateTerm)
-        assertEquals(receivedTerm.comparison, expCompTerm)
-        assertEquals(receivedTerm.date, date)
+        receivedTerm.comparison shouldBe expCompTerm
+        receivedTerm.date shouldBe date
     }
 
-    @Test fun withReceivedAfterMethodShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withReceivedAfterMethodShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.GT
@@ -494,27 +499,28 @@ class BasicSearchBuilderTest : WordSpec() {
         sb.withReceivedAfter(date)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val receivedTerm: ReceivedDateTerm = terms.get() as ReceivedDateTerm
+        terms.shouldNotBeNull()
 
-        assertTrue(receivedTerm is ReceivedDateTerm)
-        assertEquals(receivedTerm.comparison, expCompTerm)
-        assertEquals(receivedTerm.date, date)
+        val receivedTerm = terms as ReceivedDateTerm
+
+        receivedTerm.comparison shouldBe expCompTerm
+        receivedTerm.date shouldBe date
     }
 
-    @Test fun receivedOnOrBeforeMethodShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun receivedOnOrBeforeMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.LE
         val date = Date()
         val receivedTerm = sb.receivedOnOrBefore(date)
 
-        assertTrue(receivedTerm is ReceivedDateTerm)
-        assertEquals(receivedTerm.comparison, expCompTerm)
-        assertEquals(receivedTerm.date, date)
+        receivedTerm.comparison shouldBe expCompTerm
+        receivedTerm.date shouldBe date
     }
 
-    @Test fun withReceivedOnOrBeforeMethodShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withReceivedOnOrBeforeMethodShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.LE
@@ -522,28 +528,28 @@ class BasicSearchBuilderTest : WordSpec() {
         sb.withReceivedOnOrBefore(date)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val receivedTerm: ReceivedDateTerm = terms.get() as ReceivedDateTerm
+        terms.shouldNotBeNull()
 
-        assertTrue(receivedTerm is ReceivedDateTerm)
-        assertEquals(receivedTerm.comparison, expCompTerm)
-        assertEquals(receivedTerm.date, date)
+        val receivedTerm = terms as ReceivedDateTerm
+
+        receivedTerm.comparison shouldBe expCompTerm
+        receivedTerm.date shouldBe date
     }
 
-    @Test fun receivedBeforeMethodShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun receivedBeforeMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.LT
         val date = Date()
         val receivedTerm = sb.receivedBefore(date)
 
-        assertTrue(receivedTerm is ReceivedDateTerm)
-        assertEquals(receivedTerm.comparison, expCompTerm)
-        assertEquals(receivedTerm.date, date)
-
+        receivedTerm.comparison shouldBe expCompTerm
+        receivedTerm.date shouldBe date
     }
 
-    @Test fun withReceivedBeforeMethodShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withReceivedBeforeMethodShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.LT
@@ -551,27 +557,28 @@ class BasicSearchBuilderTest : WordSpec() {
         sb.withReceivedBefore(date)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val receivedTerm: ReceivedDateTerm = terms.get() as ReceivedDateTerm
+        terms.shouldNotBeNull()
 
-        assertTrue(receivedTerm is ReceivedDateTerm)
-        assertEquals(receivedTerm.comparison, expCompTerm)
-        assertEquals(receivedTerm.date, date)
+        val receivedTerm = terms as ReceivedDateTerm
+
+        receivedTerm.comparison shouldBe expCompTerm
+        receivedTerm.date shouldBe date
     }
 
-    @Test fun notReceivedOnMethodShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun notReceivedOnMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.NE
         val date = Date()
         val receivedTerm = sb.notReceivedOn(date)
 
-        assertTrue(receivedTerm is ReceivedDateTerm)
-        assertEquals(receivedTerm.comparison, expCompTerm)
-        assertEquals(receivedTerm.date, date)
+        receivedTerm.comparison shouldBe expCompTerm
+        receivedTerm.date shouldBe date
     }
 
-    @Test fun withNotReceivedOnMethodShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withNotReceivedOnMethodShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.NE
@@ -579,35 +586,34 @@ class BasicSearchBuilderTest : WordSpec() {
         sb.withNotReceivedOn(date)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val receivedTerm: ReceivedDateTerm = terms.get() as ReceivedDateTerm
+        terms.shouldNotBeNull()
 
-        assertTrue(receivedTerm is ReceivedDateTerm)
-        assertEquals(receivedTerm.comparison, expCompTerm)
-        assertEquals(receivedTerm.date, date)
+        val receivedTerm = terms as ReceivedDateTerm
+
+        receivedTerm.comparison shouldBe expCompTerm
+        receivedTerm.date shouldBe date
     }
 
-    @Test fun receivedBetweenMethodWithTwoParamsShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun receivedBetweenMethodWithTwoParamsShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val startDate = Date()
         val endDate = Date()
         assertNotSame(startDate, endDate)
-        val andTerm = sb.receivedBetween(startDate, endDate)
+        val andTerm = sb.receivedBetween(startDate, endDate) as AndTerm
 
-        assertTrue(andTerm is AndTerm)
-        with (andTerm as AndTerm) {
-            val startTerm = andTerm.terms[0] as ReceivedDateTerm
-            assertEquals(startTerm.comparison, ComparisonTerm.GE)
-            assertEquals(startTerm.date, startDate)
+        val startTerm = andTerm.terms[0] as ReceivedDateTerm
+        startTerm.comparison shouldBe ComparisonTerm.GE
+        startTerm.date shouldBe startDate
 
-            val endTerm = andTerm.terms[1] as ReceivedDateTerm
-            assertEquals(endTerm.comparison, ComparisonTerm.LE)
-            assertEquals(endTerm.date, endDate)
-        }
+        val endTerm = andTerm.terms[1] as ReceivedDateTerm
+        endTerm.comparison shouldBe ComparisonTerm.LE
+        endTerm.date shouldBe endDate
     }
 
-    @Test fun withReceivedBetweenMethodWithTwoParamsShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withReceivedBetweenMethodWithTwoParamsShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val startDate = Date()
@@ -616,39 +622,39 @@ class BasicSearchBuilderTest : WordSpec() {
         sb.withReceivedBetween(startDate, endDate)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val andTerm: AndTerm = terms.get() as AndTerm
+        terms.shouldNotBeNull()
+
+        val andTerm = terms as AndTerm
 
         val startTerm = andTerm.terms[0] as ReceivedDateTerm
-        assertEquals(startTerm.comparison, ComparisonTerm.GE)
-        assertEquals(startTerm.date, startDate)
+        startTerm.comparison shouldBe ComparisonTerm.GE
+        startTerm.date shouldBe startDate
 
         val endTerm = andTerm.terms[1] as ReceivedDateTerm
-        assertEquals(endTerm.comparison, ComparisonTerm.LE)
-        assertEquals(endTerm.date, endDate)
+        endTerm.comparison shouldBe ComparisonTerm.LE
+        endTerm.date shouldBe endDate
     }
 
-    @Test fun receivedBetweenMethodWithRangeShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun receivedBetweenMethodWithRangeShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val startDate = Date()
         val endDate = Date()
         assertNotSame(startDate, endDate)
-        val andTerm = sb.receivedBetween(startDate..endDate)
+        val andTerm = sb.receivedBetween(startDate..endDate) as AndTerm
 
-        assertTrue(andTerm is AndTerm)
-        with (andTerm as AndTerm) {
-            val startTerm = andTerm.terms[0] as ReceivedDateTerm
-            assertEquals(startTerm.comparison, ComparisonTerm.GE)
-            assertEquals(startTerm.date, startDate)
+        val startTerm = andTerm.terms[0] as ReceivedDateTerm
+        startTerm.comparison shouldBe ComparisonTerm.GE
+        startTerm.date shouldBe startDate
 
-            val endTerm = andTerm.terms[1] as ReceivedDateTerm
-            assertEquals(endTerm.comparison, ComparisonTerm.LE)
-            assertEquals(endTerm.date, endDate)
-        }
+        val endTerm = andTerm.terms[1] as ReceivedDateTerm
+        endTerm.comparison shouldBe ComparisonTerm.LE
+        endTerm.date shouldBe endDate
     }
 
-    @Test fun withReceivedBetweenMethodWithRangeShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withReceivedBetweenMethodWithRangeShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val startDate = Date()
@@ -657,31 +663,33 @@ class BasicSearchBuilderTest : WordSpec() {
         sb.withReceivedBetween(startDate..endDate)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val andTerm: AndTerm = terms.get() as AndTerm
+        terms.shouldNotBeNull()
+
+        val andTerm = terms as AndTerm
 
         val startTerm = andTerm.terms[0] as ReceivedDateTerm
-        assertEquals(startTerm.comparison, ComparisonTerm.GE)
-        assertEquals(startTerm.date, startDate)
+        startTerm.comparison shouldBe ComparisonTerm.GE
+        startTerm.date shouldBe startDate
 
         val endTerm = andTerm.terms[1] as ReceivedDateTerm
-        assertEquals(endTerm.comparison, ComparisonTerm.LE)
-        assertEquals(endTerm.date, endDate)
+        endTerm.comparison shouldBe ComparisonTerm.LE
+        endTerm.date shouldBe endDate
     }
 
-    @Test fun sentMethodShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun sentMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val compTerm = ComparisonTerm.GE
         val date = Date()
         val sentTerm = sb.sent(compTerm, date)
 
-        assertEquals(sentTerm.comparison, compTerm)
-        assertEquals(sentTerm.date, date)
-
+        sentTerm.comparison shouldBe compTerm
+        sentTerm.date shouldBe date
     }
 
-    @Test fun withSentMethodShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withSentMethodShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val compTerm = ComparisonTerm.GE
@@ -689,25 +697,28 @@ class BasicSearchBuilderTest : WordSpec() {
         sb.withSent(compTerm, date)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val sentTerm: SentDateTerm = terms.get() as SentDateTerm
+        terms.shouldNotBeNull()
 
-        assertEquals(sentTerm.comparison, compTerm)
-        assertEquals(sentTerm.date, date)
+        val sentTerm = terms as SentDateTerm
+
+        sentTerm.comparison shouldBe compTerm
+        sentTerm.date shouldBe date
     }
 
-    @Test fun sentOnMethodShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun sentOnMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.EQ
         val date = Date()
         val sentTerm = sb.sentOn(date)
 
-        assertEquals(sentTerm.comparison, expCompTerm)
-        assertEquals(sentTerm.date, date)
+        sentTerm.comparison shouldBe expCompTerm
+        sentTerm.date shouldBe date
     }
 
-    @Test fun withSentOnMethodShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withSentOnMethodShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.EQ
@@ -715,25 +726,28 @@ class BasicSearchBuilderTest : WordSpec() {
         sb.withSentOn(date)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val sentTerm: SentDateTerm = terms.get() as SentDateTerm
+        terms.shouldNotBeNull()
 
-        assertEquals(sentTerm.comparison, expCompTerm)
-        assertEquals(sentTerm.date, date)
+        val sentTerm = terms as SentDateTerm
+
+        sentTerm.comparison shouldBe expCompTerm
+        sentTerm.date shouldBe date
     }
 
-    @Test fun sentOnOrAfterMethodShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun sentOnOrAfterMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.GE
         val date = Date()
         val sentTerm = sb.sentOnOrAfter(date)
 
-        assertEquals(sentTerm.comparison, expCompTerm)
-        assertEquals(sentTerm.date, date)
+        sentTerm.comparison shouldBe expCompTerm
+        sentTerm.date shouldBe date
     }
 
-    @Test fun withSentOnOrAfterMethodShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withSentOnOrAfterMethodShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.GE
@@ -741,25 +755,28 @@ class BasicSearchBuilderTest : WordSpec() {
         sb.withSentOnOrAfter(date)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val sentTerm: SentDateTerm = terms.get() as SentDateTerm
+        terms.shouldNotBeNull()
 
-        assertEquals(sentTerm.comparison, expCompTerm)
-        assertEquals(sentTerm.date, date)
+        val sentTerm = terms as SentDateTerm
+
+        sentTerm.comparison shouldBe expCompTerm
+        sentTerm.date shouldBe date
     }
 
-    @Test fun sentAfterMethodShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun sentAfterMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.GT
         val date = Date()
         val sentTerm = sb.sentAfter(date)
 
-        assertEquals(sentTerm.comparison, expCompTerm)
-        assertEquals(sentTerm.date, date)
+        sentTerm.comparison shouldBe expCompTerm
+        sentTerm.date shouldBe date
     }
 
-    @Test fun withSentAfterMethodShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withSentAfterMethodShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.GT
@@ -767,25 +784,28 @@ class BasicSearchBuilderTest : WordSpec() {
         sb.withSentAfter(date)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val sentTerm: SentDateTerm = terms.get() as SentDateTerm
+        terms.shouldNotBeNull()
 
-        assertEquals(sentTerm.comparison, expCompTerm)
-        assertEquals(sentTerm.date, date)
+        val sentTerm = terms as SentDateTerm
+
+        sentTerm.comparison shouldBe expCompTerm
+        sentTerm.date shouldBe date
     }
 
-    @Test fun sentOnOrBeforeMethodShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun sentOnOrBeforeMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.LE
         val date = Date()
         val sentTerm = sb.sentOnOrBefore(date)
 
-        assertEquals(sentTerm.comparison, expCompTerm)
-        assertEquals(sentTerm.date, date)
+        sentTerm.comparison shouldBe expCompTerm
+        sentTerm.date shouldBe date
     }
 
-    @Test fun withSentOnOrBeforeMethodShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withSentOnOrBeforeMethodShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.LE
@@ -793,26 +813,28 @@ class BasicSearchBuilderTest : WordSpec() {
         sb.withSentOnOrBefore(date)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val sentTerm: SentDateTerm = terms.get() as SentDateTerm
+        terms.shouldNotBeNull()
 
-        assertEquals(sentTerm.comparison, expCompTerm)
-        assertEquals(sentTerm.date, date)
+        val sentTerm = terms as SentDateTerm
+
+        sentTerm.comparison shouldBe expCompTerm
+        sentTerm.date shouldBe date
     }
 
-    @Test fun sentBeforeMethodShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun sentBeforeMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.LT
         val date = Date()
         val sentTerm = sb.sentBefore(date)
 
-        assertEquals(sentTerm.comparison, expCompTerm)
-        assertEquals(sentTerm.date, date)
-
+        sentTerm.comparison shouldBe expCompTerm
+        sentTerm.date shouldBe date
     }
 
-    @Test fun withSentBeforeMethodShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withSentBeforeMethodShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.LT
@@ -820,25 +842,28 @@ class BasicSearchBuilderTest : WordSpec() {
         sb.withSentBefore(date)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val sentTerm: SentDateTerm = terms.get() as SentDateTerm
+        terms.shouldNotBeNull()
 
-        assertEquals(sentTerm.comparison, expCompTerm)
-        assertEquals(sentTerm.date, date)
+        val sentTerm = terms as SentDateTerm
+
+        sentTerm.comparison shouldBe expCompTerm
+        sentTerm.date shouldBe date
     }
 
-    @Test fun notSentOnMethodShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun notSentOnMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.NE
         val date = Date()
         val sentTerm = sb.notSentOn(date)
 
-        assertEquals(sentTerm.comparison, expCompTerm)
-        assertEquals(sentTerm.date, date)
+        sentTerm.comparison shouldBe expCompTerm
+        sentTerm.date shouldBe date
     }
 
-    @Test fun withNotSentOnMethodShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withNotSentOnMethodShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.NE
@@ -846,34 +871,34 @@ class BasicSearchBuilderTest : WordSpec() {
         sb.withNotSentOn(date)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val sentTerm: SentDateTerm = terms.get() as SentDateTerm
+        terms.shouldNotBeNull()
 
-        assertEquals(sentTerm.comparison, expCompTerm)
-        assertEquals(sentTerm.date, date)
+        val sentTerm = terms as SentDateTerm
+
+        sentTerm.comparison shouldBe expCompTerm
+        sentTerm.date shouldBe date
     }
 
-    @Test fun sentBetweenMethodWithTwoParamsShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun sentBetweenMethodWithTwoParamsShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val startDate = Date()
         val endDate = Date()
         assertNotSame(startDate, endDate)
-        val andTerm = sb.sentBetween(startDate, endDate)
+        val andTerm = sb.sentBetween(startDate, endDate) as AndTerm
 
-        assertTrue(andTerm is AndTerm)
-        with (andTerm as AndTerm) {
-            val startTerm = andTerm.terms[0] as SentDateTerm
-            assertEquals(startTerm.comparison, ComparisonTerm.GE)
-            assertEquals(startTerm.date, startDate)
+        val startTerm = andTerm.terms[0] as SentDateTerm
+        startTerm.comparison shouldBe ComparisonTerm.GE
+        startTerm.date shouldBe startDate
 
-            val endTerm = andTerm.terms[1] as SentDateTerm
-            assertEquals(endTerm.comparison, ComparisonTerm.LE)
-            assertEquals(endTerm.date, endDate)
-        }
+        val endTerm = andTerm.terms[1] as SentDateTerm
+        endTerm.comparison shouldBe ComparisonTerm.LE
+        endTerm.date shouldBe endDate
     }
 
-    @Test fun withSentBetweenMethodWithTwoParamsShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withSentBetweenMethodWithTwoParamsShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val startDate = Date()
@@ -882,39 +907,39 @@ class BasicSearchBuilderTest : WordSpec() {
         sb.withSentBetween(startDate, endDate)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val andTerm: AndTerm = terms.get() as AndTerm
+        terms.shouldNotBeNull()
+
+        val andTerm = terms as AndTerm
 
         val startTerm = andTerm.terms[0] as SentDateTerm
-        assertEquals(startTerm.comparison, ComparisonTerm.GE)
-        assertEquals(startTerm.date, startDate)
+        startTerm.comparison shouldBe ComparisonTerm.GE
+        startTerm.date shouldBe startDate
 
         val endTerm = andTerm.terms[1] as SentDateTerm
-        assertEquals(endTerm.comparison, ComparisonTerm.LE)
-        assertEquals(endTerm.date, endDate)
+        endTerm.comparison shouldBe ComparisonTerm.LE
+        endTerm.date shouldBe endDate
     }
 
-    @Test fun sentBetweenMethodWithRangeShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun sentBetweenMethodWithRangeShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val startDate = Date()
         val endDate = Date()
         assertNotSame(startDate, endDate)
-        val andTerm = sb.sentBetween(startDate..endDate)
+        val andTerm = sb.sentBetween(startDate..endDate) as AndTerm
 
-        assertTrue(andTerm is AndTerm)
-        with (andTerm as AndTerm) {
-            val startTerm = andTerm.terms[0] as SentDateTerm
-            assertEquals(startTerm.comparison, ComparisonTerm.GE)
-            assertEquals(startTerm.date, startDate)
+        val startTerm = andTerm.terms[0] as SentDateTerm
+        startTerm.comparison shouldBe ComparisonTerm.GE
+        startTerm.date shouldBe startDate
 
-            val endTerm = andTerm.terms[1] as SentDateTerm
-            assertEquals(endTerm.comparison, ComparisonTerm.LE)
-            assertEquals(endTerm.date, endDate)
-        }
+        val endTerm = andTerm.terms[1] as SentDateTerm
+        endTerm.comparison shouldBe ComparisonTerm.LE
+        endTerm.date shouldBe endDate
     }
 
-    @Test fun withSentBetweenMethodWithRangeShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withSentBetweenMethodWithRangeShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val startDate = Date()
@@ -923,71 +948,80 @@ class BasicSearchBuilderTest : WordSpec() {
         sb.withSentBetween(startDate..endDate)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val andTerm: AndTerm = terms.get() as AndTerm
+        terms.shouldNotBeNull()
+
+        val andTerm = terms as AndTerm
 
         val startTerm = andTerm.terms[0] as SentDateTerm
-        assertEquals(startTerm.comparison, ComparisonTerm.GE)
-        assertEquals(startTerm.date, startDate)
+        startTerm.comparison shouldBe ComparisonTerm.GE
+        startTerm.date shouldBe startDate
 
         val endTerm = andTerm.terms[1] as SentDateTerm
-        assertEquals(endTerm.comparison, ComparisonTerm.LE)
-        assertEquals(endTerm.date, endDate)
+        endTerm.comparison shouldBe ComparisonTerm.LE
+        endTerm.date shouldBe endDate
     }
 
-    @Test fun messageIdMethodShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun messageIdMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val id = "1234"
         val messageIdTerm = sb.messageId(id)
-        assertTrue(messageIdTerm is MessageIDTerm)
-        assertEquals(messageIdTerm.pattern, id)
+
+        messageIdTerm.pattern shouldBe id
     }
 
-    @Test fun withMessageIdMethodShouldProperlyFillSearchBuilderTerm() {
+    @Test
+    fun withMessageIdMethodShouldProperlyFillSearchBuilderTerm() {
         val sb = SearchBuilder()
 
         val id = "1234"
         sb.withMessageId(id)
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val messageIdTerm: MessageIDTerm = terms.get() as MessageIDTerm
-        assertEquals(messageIdTerm.pattern, id)
+        terms.shouldNotBeNull()
+
+        val messageIdTerm = terms as MessageIDTerm
+
+        messageIdTerm.pattern shouldBe id
     }
 
-    @Test fun messageNumberMethodShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun messageNumberMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val number = 1234
         val messageNumberTerm = sb.messageNumber(number)
-        assertTrue(messageNumberTerm is MessageNumberTerm)
-        assertEquals(messageNumberTerm.number, number)
+
+        messageNumberTerm.number shouldBe number
     }
 
-    @Test fun withMessageNumberMethodShouldProperlyFillSearchBuilderTerm() {
+    @Test
+    fun withMessageNumberMethodShouldProperlyFillSearchBuilderTerm() {
         val sb = SearchBuilder()
 
         val number = 1234
         sb.withMessageNumber(number)
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val messageNumberTerm: MessageNumberTerm = terms.get() as MessageNumberTerm
-        assertEquals(messageNumberTerm.number, number)
+        terms.shouldNotBeNull()
+
+        val messageNumberTerm = terms as MessageNumberTerm
+        messageNumberTerm.number shouldBe number
     }
 
-    @Test fun sizeMethodShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun sizeMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val compTerm = ComparisonTerm.GE
         val size = 1234
         val sizeTerm = sb.size(compTerm, size)
 
-        assertEquals(sizeTerm.comparison, compTerm)
-        assertEquals(sizeTerm.number, size)
-
+        sizeTerm.comparison shouldBe compTerm
+        sizeTerm.number shouldBe size
     }
 
-    @Test fun withSizeMethodShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withSizeMethodShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val compTerm = ComparisonTerm.GE
@@ -995,25 +1029,28 @@ class BasicSearchBuilderTest : WordSpec() {
         sb.withSize(compTerm, size)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val sizeTerm: SizeTerm = terms.get() as SizeTerm
+        terms.shouldNotBeNull()
 
-        assertEquals(sizeTerm.comparison, compTerm)
-        assertEquals(sizeTerm.number, size)
+        val sizeTerm = terms as SizeTerm
+
+        sizeTerm.comparison shouldBe compTerm
+        sizeTerm.number shouldBe size
     }
 
-    @Test fun sizeIsMethodShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun sizeIsMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.EQ
         val size = 1234
         val sentTerm = sb.sizeIs(size)
 
-        assertEquals(sentTerm.comparison, expCompTerm)
-        assertEquals(sentTerm.number, size)
+        sentTerm.comparison shouldBe expCompTerm
+        sentTerm.number shouldBe size
     }
 
-    @Test fun withSizeIsMethodShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withSizeIsMethodShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.EQ
@@ -1021,25 +1058,28 @@ class BasicSearchBuilderTest : WordSpec() {
         sb.withSizeIs(size)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val sizeTerm: SizeTerm = terms.get() as SizeTerm
+        terms.shouldNotBeNull()
 
-        assertEquals(sizeTerm.comparison, expCompTerm)
-        assertEquals(sizeTerm.number, size)
+        val sizeTerm = terms as SizeTerm
+
+        sizeTerm.comparison shouldBe expCompTerm
+        sizeTerm.number shouldBe size
     }
 
-    @Test fun sizeIsAtLeastMethodShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun sizeIsAtLeastMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.GE
         val size = 1234
         val sizeTerm = sb.sizeIsAtLeast(size)
 
-        assertEquals(sizeTerm.comparison, expCompTerm)
-        assertEquals(sizeTerm.number, size)
+        sizeTerm.comparison shouldBe expCompTerm
+        sizeTerm.number shouldBe size
     }
 
-    @Test fun withSizeIsAtLeastMethodShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withSizeIsAtLeastMethodShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.GE
@@ -1047,25 +1087,28 @@ class BasicSearchBuilderTest : WordSpec() {
         sb.withSizeIsAtLeast(size)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val sizeTerm: SizeTerm = terms.get() as SizeTerm
+        terms.shouldNotBeNull()
 
-        assertEquals(sizeTerm.comparison, expCompTerm)
-        assertEquals(sizeTerm.number, size)
+        val sizeTerm = terms as SizeTerm
+
+        sizeTerm.comparison shouldBe expCompTerm
+        sizeTerm.number shouldBe size
     }
 
-    @Test fun sizeIsGreaterThanMethodShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun sizeIsGreaterThanMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.GT
         val size = 1234
         val sizeTerm = sb.sizeIsGreaterThan(size)
 
-        assertEquals(sizeTerm.comparison, expCompTerm)
-        assertEquals(sizeTerm.number, size)
+        sizeTerm.comparison shouldBe expCompTerm
+        sizeTerm.number shouldBe size
     }
 
-    @Test fun withSizeIsGreaterThanMethodShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withSizeIsGreaterThanMethodShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.GT
@@ -1073,25 +1116,28 @@ class BasicSearchBuilderTest : WordSpec() {
         sb.withSizeIsGreaterThan(size)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val sizeTerm: SizeTerm = terms.get() as SizeTerm
+        terms.shouldNotBeNull()
 
-        assertEquals(sizeTerm.comparison, expCompTerm)
-        assertEquals(sizeTerm.number, size)
+        val sizeTerm = terms as SizeTerm
+
+        sizeTerm.comparison shouldBe expCompTerm
+        sizeTerm.number shouldBe size
     }
 
-    @Test fun sizeIsNoMoreThanMethodShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun sizeIsNoMoreThanMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.LE
         val size = 1234
         val sizeTerm = sb.sizeIsNoMoreThan(size)
 
-        assertEquals(sizeTerm.comparison, expCompTerm)
-        assertEquals(sizeTerm.number, size)
+        sizeTerm.comparison shouldBe expCompTerm
+        sizeTerm.number shouldBe size
     }
 
-    @Test fun withSizeIsNoMoreThanMethodShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withSizeIsNoMoreThanMethodShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.LE
@@ -1099,26 +1145,28 @@ class BasicSearchBuilderTest : WordSpec() {
         sb.withSizeIsNoMoreThan(size)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val sizeTerm: SizeTerm = terms.get() as SizeTerm
+        terms.shouldNotBeNull()
 
-        assertEquals(sizeTerm.comparison, expCompTerm)
-        assertEquals(sizeTerm.number, size)
+        val sizeTerm = terms as SizeTerm
+
+        sizeTerm.comparison shouldBe expCompTerm
+        sizeTerm.number shouldBe size
     }
 
-    @Test fun sizeIsLessThanMethodShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun sizeIsLessThanMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.LT
         val size = 1234
         val sizeTerm = sb.sizeIsLessThan(size)
 
-        assertEquals(sizeTerm.comparison, expCompTerm)
-        assertEquals(sizeTerm.number, size)
-
+        sizeTerm.comparison shouldBe expCompTerm
+        sizeTerm.number shouldBe size
     }
 
-    @Test fun withSizeIsLessThanMethodShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withSizeIsLessThanMethodShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.LT
@@ -1126,25 +1174,28 @@ class BasicSearchBuilderTest : WordSpec() {
         sb.withSizeIsLessThan(size)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val sizeTerm: SizeTerm = terms.get() as SizeTerm
+        terms.shouldNotBeNull()
 
-        assertEquals(sizeTerm.comparison, expCompTerm)
-        assertEquals(sizeTerm.number, size)
+        val sizeTerm = terms as SizeTerm
+
+        sizeTerm.comparison shouldBe expCompTerm
+        sizeTerm.number shouldBe size
     }
 
-    @Test fun sizeIsNotMethodShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun sizeIsNotMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.NE
         val size = 1234
         val sentTerm = sb.sizeIsNot(size)
 
-        assertEquals(sentTerm.comparison, expCompTerm)
-        assertEquals(sentTerm.number, size)
+        sentTerm.comparison shouldBe expCompTerm
+        sentTerm.number shouldBe size
     }
 
-    @Test fun withSizeIsNotMethodShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withSizeIsNotMethodShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val expCompTerm = ComparisonTerm.NE
@@ -1152,34 +1203,34 @@ class BasicSearchBuilderTest : WordSpec() {
         sb.withSizeIsNot(size)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val sizeTerm: SizeTerm = terms.get() as SizeTerm
+        terms.shouldNotBeNull()
 
-        assertEquals(sizeTerm.comparison, expCompTerm)
-        assertEquals(sizeTerm.number, size)
+        val sizeTerm = terms as SizeTerm
+
+        sizeTerm.comparison shouldBe expCompTerm
+        sizeTerm.number shouldBe size
     }
 
-    @Test fun sizeBetweenMethodWithTwoParamsShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun sizeBetweenMethodWithTwoParamsShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val startSize = 1234
         val endSize = 4321
         assertNotSame(startSize, endSize)
-        val andTerm = sb.sizeBetween(startSize, endSize)
+        val andTerm = sb.sizeBetween(startSize, endSize) as AndTerm
 
-        assertTrue(andTerm is AndTerm)
-        with (andTerm as AndTerm) {
-            val startTerm = andTerm.terms[0] as SizeTerm
-            assertEquals(startTerm.comparison, ComparisonTerm.GE)
-            assertEquals(startTerm.number, startSize)
+        val startTerm = andTerm.terms[0] as SizeTerm
+        startTerm.comparison shouldBe ComparisonTerm.GE
+        startTerm.number shouldBe startSize
 
-            val endTerm = andTerm.terms[1] as SizeTerm
-            assertEquals(endTerm.comparison, ComparisonTerm.LE)
-            assertEquals(endTerm.number, endSize)
-        }
+        val endTerm = andTerm.terms[1] as SizeTerm
+        endTerm.comparison shouldBe ComparisonTerm.LE
+        endTerm.number shouldBe endSize
     }
 
-    @Test fun withSizeBetweenMethodWithTwoParamsShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withSizeBetweenMethodWithTwoParamsShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val startSize = 1234
@@ -1188,39 +1239,39 @@ class BasicSearchBuilderTest : WordSpec() {
         sb.withSizeBetween(startSize, endSize)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val andTerm: AndTerm = terms.get() as AndTerm
+        terms.shouldNotBeNull()
+
+        val andTerm = terms as AndTerm
 
         val startTerm = andTerm.terms[0] as SizeTerm
-        assertEquals(startTerm.comparison, ComparisonTerm.GE)
-        assertEquals(startTerm.number, startSize)
+        startTerm.comparison shouldBe ComparisonTerm.GE
+        startTerm.number shouldBe startSize
 
         val endTerm = andTerm.terms[1] as SizeTerm
-        assertEquals(endTerm.comparison, ComparisonTerm.LE)
-        assertEquals(endTerm.number, endSize)
+        endTerm.comparison shouldBe ComparisonTerm.LE
+        endTerm.number shouldBe endSize
     }
 
-    @Test fun sizeBetweenMethodWithRangeShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun sizeBetweenMethodWithRangeShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val startSize = 1234
         val endSize = 4321
         assertNotSame(startSize, endSize)
-        val andTerm = sb.sizeBetween(startSize..endSize)
+        val andTerm = sb.sizeBetween(startSize..endSize) as AndTerm
 
-        assertTrue(andTerm is AndTerm)
-        with (andTerm as AndTerm) {
-            val startTerm = andTerm.terms[0] as SizeTerm
-            assertEquals(startTerm.comparison, ComparisonTerm.GE)
-            assertEquals(startTerm.number, startSize)
+        val startTerm = andTerm.terms[0] as SizeTerm
+        startTerm.comparison shouldBe ComparisonTerm.GE
+        startTerm.number shouldBe startSize
 
-            val endTerm = andTerm.terms[1] as SizeTerm
-            assertEquals(endTerm.comparison, ComparisonTerm.LE)
-            assertEquals(endTerm.number, endSize)
-        }
+        val endTerm = andTerm.terms[1] as SizeTerm
+        endTerm.comparison shouldBe ComparisonTerm.LE
+        endTerm.number shouldBe endSize
     }
 
-    @Test fun withSizeBetweenMethodWithRangeShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withSizeBetweenMethodWithRangeShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val startSize = 1234
@@ -1229,116 +1280,123 @@ class BasicSearchBuilderTest : WordSpec() {
         sb.withSizeBetween(startSize..endSize)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val andTerm: AndTerm = terms.get() as AndTerm
+        terms.shouldNotBeNull()
+
+        val andTerm = terms as AndTerm
 
         val startTerm = andTerm.terms[0] as SizeTerm
-        assertEquals(startTerm.comparison, ComparisonTerm.GE)
-        assertEquals(startTerm.number, startSize)
+        startTerm.comparison shouldBe ComparisonTerm.GE
+        startTerm.number shouldBe startSize
 
         val endTerm = andTerm.terms[1] as SizeTerm
-        assertEquals(endTerm.comparison, ComparisonTerm.LE)
-        assertEquals(endTerm.number, endSize)
+        endTerm.comparison shouldBe ComparisonTerm.LE
+        endTerm.number shouldBe endSize
     }
 
-    @Test fun flagsMethodShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun flagsMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
-
-        val flags = Flags()
-        flags.add(Flags.Flag.DRAFT)
-        flags.add(Flags.Flag.RECENT)
+        val flags = io.github.slothLabs.mail.imap.Flags(Flag.Draft, Flag.Recent)
         val set = false
         val flagTerm = sb.flags(flags, set)
 
-        assertTrue(flagTerm is FlagTerm)
-        assertEquals(flagTerm.flags, flags)
-        assertEquals(flagTerm.testSet, set)
+        flagTerm.flags shouldBe flags.javaMailFlags
+        flagTerm.testSet shouldBe set
     }
 
-    @Test fun withFlagsMethodShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withFlagsMethodShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
-        val flags = Flags()
-        flags.add(Flags.Flag.DRAFT)
-        flags.add(Flags.Flag.RECENT)
+        val flags = Flags(Flag.Draft, Flag.Recent)
         val set = true
 
         sb.withFlags(flags, set)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val flagTerm: FlagTerm = terms.get() as FlagTerm
-        assertEquals(flagTerm.flags, flags)
-        assertEquals(flagTerm.testSet, set)
+        terms.shouldNotBeNull()
+
+        val flagTerm = terms as FlagTerm
+        flagTerm.flags shouldBe flags.javaMailFlags
+        flagTerm.testSet shouldBe set
     }
 
-    @Test fun modifiedSinceMethodShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun modifiedSinceMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val since = 1234L
         val sinceTerm = sb.modifiedSince(since)
 
-        assertTrue(sinceTerm is ModifiedSinceTerm)
-        assertEquals(sinceTerm.modSeq, since)
+        sinceTerm.modSeq shouldBe since
     }
 
-    @Test fun withModifiedSinceMethodShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withModifiedSinceMethodShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val since = 1234L
         sb.withModifiedSince(since)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val sinceTerm: ModifiedSinceTerm = terms.get() as ModifiedSinceTerm
-        assertEquals(sinceTerm.modSeq, since)
+        terms.shouldNotBeNull()
+
+        val sinceTerm = terms as ModifiedSinceTerm
+
+        sinceTerm.modSeq shouldBe since
     }
 
-    @Test fun olderMethodShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun olderMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val interval = 1234
         val olderTerm = sb.older(interval)
 
-        assertTrue(olderTerm is OlderTerm)
-        assertEquals(olderTerm.interval, interval)
+        olderTerm.interval shouldBe interval
     }
 
-    @Test fun withOlderMethodShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withOlderMethodShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val interval = 1234
         sb.withOlder(interval)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val olderTerm: OlderTerm = terms.get() as OlderTerm
-        assertEquals(olderTerm.interval, interval)
+        terms.shouldNotBeNull()
+
+        val olderTerm = terms as OlderTerm
+        olderTerm.interval shouldBe interval
     }
 
-    @Test fun youngerMethodShouldConstructAppropriateSearchTerm() {
+    @Test
+    fun youngerMethodShouldConstructAppropriateSearchTerm() {
         val sb = SearchBuilder()
 
         val interval = 1234
         val youngerTerm = sb.younger(interval)
 
-        assertTrue(youngerTerm is YoungerTerm)
-        assertEquals(youngerTerm.interval, interval)
+        youngerTerm.interval shouldBe interval
     }
 
-    @Test fun withYoungerMethodShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withYoungerMethodShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val interval = 1234
         sb.withYounger(interval)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val youngerTerm: YoungerTerm = terms.get() as YoungerTerm
-        assertEquals(youngerTerm.interval, interval)
+        terms.shouldNotBeNull()
+
+        val youngerTerm = terms as YoungerTerm
+
+        youngerTerm.interval shouldBe interval
     }
 
-    @Test fun withMethodShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun withMethodShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val interval = 1234
@@ -1346,31 +1404,35 @@ class BasicSearchBuilderTest : WordSpec() {
         sb.with(youngerTerm)
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val youngerTermFromBuilder: YoungerTerm = terms.get() as YoungerTerm
-        assertEquals(youngerTermFromBuilder, youngerTerm)
+        terms.shouldNotBeNull()
+
+        val youngerTermFromBuilder = terms as YoungerTerm
+
+        youngerTermFromBuilder shouldBe youngerTerm
     }
 
-    @Test fun unaryOperatorsShouldProperlyFillSearchBuilderTerms() {
+    @Test
+    fun unaryOperatorsShouldProperlyFillSearchBuilderTerms() {
         val sb = SearchBuilder()
 
         val interval = 1234
         val youngerTerm = YoungerTerm(interval)
         val olderTerm = OlderTerm(interval)
-        with (sb) {
+        with(sb) {
             +youngerTerm
             -olderTerm
         }
 
         val terms = sb.build()
-        assertTrue(terms is Some)
-        val andTerm = terms.get() as AndTerm
+        terms.shouldNotBeNull()
 
-        val youngerTermFromBuilder: YoungerTerm = andTerm.terms[0] as YoungerTerm
-        assertEquals(youngerTermFromBuilder, youngerTerm)
+        val andTerm = terms as AndTerm
 
-        val notOlderTermFromBuilder: NotTerm = andTerm.terms[1] as NotTerm
+        val youngerTermFromBuilder = andTerm.terms[0] as YoungerTerm
+        youngerTermFromBuilder shouldBe youngerTerm
+
+        val notOlderTermFromBuilder = andTerm.terms[1] as NotTerm
         val olderTermFromBuilder = notOlderTermFromBuilder.term as OlderTerm
-        assertEquals(olderTermFromBuilder, olderTerm)
+        olderTermFromBuilder shouldBe olderTerm
     }
 }
