@@ -1,30 +1,27 @@
 language: java
 jdk:
-  - oraclejdk8
+  - openjdk11
 install:
   - mvn --settings .travis/settings.xml install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
 before_install:
   - echo $GPG_SECRET_KEYS | base64 --decode | $GPG_EXECUTABLE --import
   - echo $GPG_OWNERTRUST | base64 --decode | $GPG_EXECUTABLE --import-ownertrust
 deploy:
-  -
-    provider: script
+  - provider: script
     script: sh $TRAVIS_BUILD_DIR/.travis/deploy.sh
     skip_cleanup: true
     on:
       repo: SlothLabs/kotlin-mail
       branch: master
       jdk: oraclejdk8
-  -
-    provider: script
+  - provider: script
     script: sh $TRAVIS_BUILD_DIR/.travis/deploy.sh
     skip_cleanup: true
     on:
       repo: SlothLabs/kotlin-mail
       tags: true
       jdk: oraclejdk8
-  -
-    provider: releases
+  - provider: releases
     api_key: $GITHUB_OAUTH_TOKEN
     skip_cleanup: true
 
