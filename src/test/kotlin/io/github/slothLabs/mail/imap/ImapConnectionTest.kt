@@ -106,7 +106,7 @@ class ImapConnectionTest : AnnotationSpec() {
         greenMail.setUser(emailAddress, password)
 
         GreenMailUtil.sendTextEmailTest(emailAddress, fromAddress, subject, testBodyText)
-        val mailSentDatePlusOneHour = greenMail.firstReceivedMailSentDatePlusOffset(1, ChronoUnit.HOURS)
+        val mailSentDatePlusOneDay = greenMail.firstReceivedMailSentDatePlusOffset(1, ChronoUnit.DAYS)
 
         var processed = false
 
@@ -117,7 +117,7 @@ class ImapConnectionTest : AnnotationSpec() {
                 preFetchBy(FetchProfileItem.MESSAGE)
                 val results = search {
                     withFrom(fromAddress)
-                    withSentOnOrBefore(mailSentDatePlusOneHour)
+                    withSentOnOrBefore(mailSentDatePlusOneDay)
                 }
                 msgList.addAll(results)
 
@@ -146,7 +146,7 @@ class ImapConnectionTest : AnnotationSpec() {
         greenMail.setUser(emailAddress, password)
 
         GreenMailUtil.sendTextEmailTest(emailAddress, fromAddress, subject, testBodyText)
-        val mailSentDatePlusOneHour = greenMail.firstReceivedMailSentDatePlusOffset(1, ChronoUnit.HOURS)
+        val mailSentDatePlusOneDay = greenMail.firstReceivedMailSentDatePlusOffset(1, ChronoUnit.DAYS)
 
         var processed = false
 
@@ -160,7 +160,7 @@ class ImapConnectionTest : AnnotationSpec() {
                     +to(emailAddress)
                     -subject("Testing")
 
-                    +sentOnOrBefore(mailSentDatePlusOneHour)
+                    +sentOnOrBefore(mailSentDatePlusOneDay)
                 }
                 msgList.addAll(results)
 
@@ -189,7 +189,7 @@ class ImapConnectionTest : AnnotationSpec() {
         greenMail.setUser(emailAddress, password)
 
         GreenMailUtil.sendTextEmailTest(emailAddress, fromAddress, subject, testBodyText)
-        val mailSentDatePlusOneHour = greenMail.firstReceivedMailSentDatePlusOffset(1, ChronoUnit.HOURS)
+        val mailSentDatePlusOneDay = greenMail.firstReceivedMailSentDatePlusOffset(1, ChronoUnit.DAYS)
 
         var processed = false
 
@@ -203,7 +203,7 @@ class ImapConnectionTest : AnnotationSpec() {
                     +to(emailAddress)
                     -subject("Testing")
 
-                    +sentOnOrBefore(mailSentDatePlusOneHour)
+                    +sentOnOrBefore(mailSentDatePlusOneDay)
 
                     sortedBy {
                         +From
@@ -270,6 +270,74 @@ class ImapConnectionTest : AnnotationSpec() {
         testBodyText.trim() shouldBe first.bodyText.trim()
         first.headers.isEmpty() shouldBe false
 
+        processed shouldBe true
+    }
+
+    @Test
+    fun shouldMarkAsRead() {
+        val emailAddress = "test@localhost.com"
+        val fromAddress = "from@localhost.com"
+        val password = "password"
+        val subject = "Test Email"
+        val testBodyText = "Body Text goes here!"
+
+        greenMail.setUser(emailAddress, password)
+
+        GreenMailUtil.sendTextEmailTest(emailAddress, fromAddress, subject, testBodyText)
+
+        var processed = false
+
+        imap(host, port, emailAddress, password) {
+            folder("INBOX", FolderModes.ReadWrite) {
+                preFetchBy(FetchProfileItem.MESSAGE)
+                val results = search {
+                    +from(fromAddress)
+                    markAsRead(true)
+                }
+
+                results.isEmpty() shouldBe false
+
+                processed = true
+            }
+        }
+
+        val firstMessageFlags = greenMail.receivedMessages.first().flags
+        val firstMessageContainsSeenFlag = firstMessageFlags.contains(Flag.Seen.javaMailFlag)
+        firstMessageContainsSeenFlag shouldBe true
+        processed shouldBe true
+    }
+
+    @Test
+    fun shouldNotMarkAsRead() {
+        val emailAddress = "test@localhost.com"
+        val fromAddress = "from@localhost.com"
+        val password = "password"
+        val subject = "Test Email"
+        val testBodyText = "Body Text goes here!"
+
+        greenMail.setUser(emailAddress, password)
+
+        GreenMailUtil.sendTextEmailTest(emailAddress, fromAddress, subject, testBodyText)
+
+        var processed = false
+
+        imap(host, port, emailAddress, password) {
+            folder("INBOX", FolderModes.ReadOnly) {
+                preFetchBy(FetchProfileItem.MESSAGE)
+                val results = search {
+                    +from(fromAddress)
+                    markAsRead(false)
+                }
+
+                results.isEmpty() shouldBe false
+
+                processed = true
+            }
+        }
+
+        val firstMessageFlags = greenMail.receivedMessages.first().flags
+        val firstMessageContainsSeenFlag = firstMessageFlags.contains(Flag.Seen.javaMailFlag)
+        firstMessageContainsSeenFlag shouldBe false
         processed shouldBe true
     }
 }
