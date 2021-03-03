@@ -82,7 +82,7 @@ imap(connectionInfo) {
             +subject("Only a Test")
             +(header("Content-Type", "text/html") or sizeIsAtLeast(1024))
             +sentOnOrBefore(Date())
-            markAsRead(true) // notice the lack of unary plus, default: false
+            markAsRead = true // notice the lack of unary plus, default: false
         }
 
         results.forEach {
